@@ -6,5 +6,11 @@ public enum NotificationType
     CandidatureRejetee,
     ConventionGeneree,
     EvaluationSoumise,
-    RappelDelai
+    RappelDelai,
+    SujetPropose,
+    SujetAccepte,
+    ChangementSujetDemande,
+    ChangementSujetTraite,
+    CandidatureDeposee,
+    EvaluationValidee
 }

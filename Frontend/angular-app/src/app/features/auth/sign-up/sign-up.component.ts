@@ -27,6 +27,7 @@ export class SignUpComponent {
   ) {
     this.signUpForm = this.fb.group({
       firstName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
+      lastName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [
         Validators.required,
@@ -54,7 +55,7 @@ export class SignUpComponent {
       this.authService.register(formData).subscribe({
         next: () => {
           this.isLoading = false;
-          this.router.navigate(['/dashboard']);
+          this.router.navigate(this.authService.hasRole('ADMIN') ? ['/admin'] : ['/espace']);
         },
         error: (error: ApiError) => {
           this.isLoading = false;

@@ -1,47 +1,74 @@
-<aside class="max-w-62.5 ease-nav-brand z-990 fixed inset-y-0 block w-full -translate-x-full flex-col items-center justify-between border-0 bg-white p-0 antialiased shadow-2xl transition-transform duration-200 xl:left-0 xl:translate-x-0 flex overflow-hidden">
-  <!-- Logo Header -->
-  <div class="h-19.5 flex-shrink-0 w-full pt-6 pb-4">
-    <a class="block px-6 m-0 text-sm whitespace-nowrap" href="/dashboard">
-      <div class="flex items-center space-x-3 animate-fade-in">
-        <div class="w-12 h-12 bg-gradient-to-br from-primary to-primary-dark rounded-2xl flex items-center justify-center shadow-lg">
-          <span class="text-white font-bold text-xl">S</span>
-        </div>
-        <div>
-          <span class="font-bold text-xl text-primary">STB</span>
-          <p class="text-xs text-gray-400">Gestion des Stagiaires</p>
-        </div>
-      </div>
-    </a>
+<aside class="console-sidebar fixed inset-y-0 left-0 z-[990] w-[264px] flex flex-col
+              bg-[#0B1222] border-r border-white/5 shadow-2xl">
+  <!-- ================= Brand ================= -->
+  <div class="flex items-center gap-3 px-5 h-[72px] flex-shrink-0">
+    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#C8A951] to-[#B8983D] flex items-center justify-center shadow-lg shadow-[#C8A951]/20">
+      <span class="text-[#0B1222] font-bold text-lg">S</span>
+    </div>
+    <div class="leading-tight">
+      <p class="text-white font-bold text-[15px]">STB <span class="text-[#C8A951]">StageConnect</span></p>
+      <p class="text-[10px] text-slate-500 uppercase tracking-widest">Administration</p>
+    </div>
   </div>
 
-  <!-- Menu Items -->
-  <div class="flex-1 w-full overflow-y-auto">
-    <ul class="flex flex-col pl-0 mb-0 space-y-1.5 px-4">
-      <ng-container *ngFor="let item of menuItems; let i = index">
-        <!-- Divider -->
-        <li *ngIf="item.divider" class="w-full my-2">
-          <hr class="border-gray-200">
-        </li>
 
-        <!-- Header -->
-        <li *ngIf="item.header" class="w-full mt-6">
-          <h6 class="pl-3 text-xs font-bold leading-tight uppercase text-gray-400 tracking-wider">{{ item.header }}</h6>
-        </li>
 
-        <!-- Menu Item -->
-        <li *ngIf="!item.divider && !item.header" class="w-full animate-fade-in" [style.animation-delay]="(i * 50) + 'ms'">
-          <a 
-            [routerLink]="[item.route]" 
-            routerLinkActive="bg-primary text-white shadow-lg" 
-            [routerLinkActiveOptions]="{exact: item.route === '/dashboard'}"
-            class="py-3.5 text-sm ease-nav-brand flex items-center whitespace-nowrap rounded-xl px-4 font-medium text-gray-600 transition-all duration-300 hover:bg-gray-50 hover:text-gray-900 group relative overflow-hidden">
-            <div class="mr-3 flex h-9 w-9 items-center justify-center rounded-lg transition-all">
-              <span class="material-icons text-xl group-[.bg-primary]:text-white">{{ item.icon }}</span>
-            </div>
-            <span class="duration-300 opacity-100 pointer-events-none ease-soft">{{ item.label }}</span>
+  <!-- ================= Grouped nav ================= -->
+  <nav class="flex-1 overflow-y-auto px-4 pb-4 space-y-6 sidebar-scroll" aria-label="Navigation admin">
+    <div *ngFor="let group of groups">
+      <p *ngIf="group.title" class="px-3 mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600">
+        {{ group.title }}
+      </p>
+
+      <ul class="space-y-1">
+        <li *ngFor="let item of group.items">
+          <a [routerLink]="[item.route]"
+             routerLinkActive="nav-active"
+             class="nav-item group">
+            <span class="material-icons text-[19px] nav-icon">{{ item.icon }}</span>
+            <span class="flex-1">{{ item.label }}</span>
+            <span class="nav-dot"></span>
           </a>
         </li>
-      </ng-container>
-    </ul>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ================= User + actions ================= -->
+  <div class="flex-shrink-0 px-4 pb-5 pt-3 border-t border-white/5">
+    <!-- Theme toggle -->
+    <button (click)="toggleTheme()"
+            class="w-full flex items-center justify-center gap-2 py-2.5 mb-3 rounded-xl text-[13px] font-medium
+                   text-slate-300 bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 transition">
+      <span class="material-icons text-[17px]">{{ themeService.isDark ? 'light_mode' : 'dark_mode' }}</span>
+      {{ themeService.isDark ? 'Mode clair' : 'Mode sombre' }}
+    </button>
+
+    <!-- User card -->
+    <div class="flex items-center gap-3 px-2 mb-3">
+      <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#C8A951] to-[#B8983D] flex items-center justify-center flex-shrink-0">
+        <span class="text-[#0B1222] font-bold text-sm">{{ getUserInitial() }}</span>
+      </div>
+      <div class="min-w-0">
+        <p class="text-sm font-semibold text-slate-100 truncate">{{ currentUser?.firstName || 'Admin' }}</p>
+        <p class="text-[11px] text-slate-500 truncate">{{ formatRole(currentUser?.role) }}</p>
+      </div>
+    </div>
+
+    <!-- Mon profil -->
+    <a routerLink="/admin/profil"
+       class="w-full flex items-center justify-center gap-2 py-2 mb-2 rounded-xl text-[13px] font-medium
+              text-slate-300 bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 transition">
+      <span class="material-icons text-[17px]">person</span>
+      Mon profil
+    </a>
+
+    <!-- Logout -->
+    <button (click)="logout()"
+            class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-medium
+                   text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/10 transition">
+      <span class="material-icons text-[17px]">logout</span>
+      Déconnexion
+    </button>
   </div>
 </aside>

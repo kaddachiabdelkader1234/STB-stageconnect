@@ -170,6 +170,62 @@ public class StagiairesController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Explicitly transitions an accepted stagiaire to EnCours (internship started).
+    /// </summary>
+    [HttpPost("{id:guid}/demarrer")]
+    [Authorize(Roles = "ADMIN,TRAINER")]
+    [ProducesResponseType(typeof(StagiaireReadDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<StagiaireReadDto>> Demarrer(Guid id, CancellationToken cancellationToken)
+    {
+        var entity = await _dbContext.Stagiaires.SingleOrDefaultAsync(x => x.Id == id, cancellationToken)
+            ?? throw NotFoundException.For("Le stagiaire", id);
+
+        if (entity.Statut == StatutStagiaire.EnCours)
+        {
+            return Ok(CandidaturesController.MapToReadDto(entity));
+        }
+
+        if (entity.Statut != StatutStagiaire.Acceptee)
+        {
+            throw new ConflictException("Seul un stagiaire au statut 'Acceptee' peut démarrer son stage.");
+        }
+
+        entity.Statut = StatutStagiaire.EnCours;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return Ok(CandidaturesController.MapToReadDto(entity));
+    }
+
+    /// <summary>
+    /// Explicitly transitions an active stagiaire to Termine (internship completed).
+    /// </summary>
+    [HttpPost("{id:guid}/terminer")]
+    [Authorize(Roles = "ADMIN,TRAINER")]
+    [ProducesResponseType(typeof(StagiaireReadDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<StagiaireReadDto>> Terminer(Guid id, CancellationToken cancellationToken)
+    {
+        var entity = await _dbContext.Stagiaires.SingleOrDefaultAsync(x => x.Id == id, cancellationToken)
+            ?? throw NotFoundException.For("Le stagiaire", id);
+
+        if (entity.Statut == StatutStagiaire.Termine)
+        {
+            return Ok(CandidaturesController.MapToReadDto(entity));
+        }
+
+        if (entity.Statut != StatutStagiaire.EnCours && entity.Statut != StatutStagiaire.Acceptee)
+        {
+            throw new ConflictException("Seul un stagiaire en cours ou accepté peut être clôturé.");
+        }
+
+        entity.Statut = StatutStagiaire.Termine;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return Ok(CandidaturesController.MapToReadDto(entity));
+    }
+
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "ADMIN")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -188,7 +244,9 @@ public class StagiairesController : ControllerBase
         return NoContent();
     }
 
-    private static IQueryable<StagiaireEntity> ApplyFilters(
+    // internal, not private: CandidaturesController.GetAll reuses these so the two list endpoints
+    // (stagiaires and candidatures are the same record at different stages) cannot drift apart.
+    internal static IQueryable<StagiaireEntity> ApplyFilters(
         IQueryable<StagiaireEntity> source,
         StagiaireQueryParameters query)
     {
@@ -241,7 +299,7 @@ public class StagiairesController : ControllerBase
         }
     }
 
-    private static Expression<Func<StagiaireEntity, StagiaireReadDto>> ToReadDtoExpression() => s => new StagiaireReadDto
+    internal static Expression<Func<StagiaireEntity, StagiaireReadDto>> ToReadDtoExpression() => s => new StagiaireReadDto
     {
         Id = s.Id,
         UtilisateurId = s.UtilisateurId,

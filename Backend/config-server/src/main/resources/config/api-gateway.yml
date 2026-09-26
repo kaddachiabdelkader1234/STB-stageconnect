@@ -46,6 +46,16 @@ spring:
           uri: lb://NOTIFICATION-SERVICE
           predicates:
             - Path=/api/v1/notifications/**
+          # WebSocket/negotiation for the SignalR hub also routes here;
+          # Spring Cloud Gateway transparently upgrades the HTTP connection.
+        - id: notification-hub
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/hub/**
+        - id: subject-matching-service
+          uri: lb://SUBJECT-MATCHING-SERVICE
+          predicates:
+            - Path=/api/v1/subjects/**,/api/v1/matching/**,/api/v1/subject-assignments/**,/api/v1/subject-change-requests/**
 
 gateway:
   cors:

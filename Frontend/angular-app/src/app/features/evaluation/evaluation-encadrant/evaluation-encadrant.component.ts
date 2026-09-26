@@ -1,8 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../../core/services/auth.service';
 import { EvaluationService } from '../../../core/services/evaluation.service';
 import { StagiaireService } from '../../../core/services/stagiaire.service';
+import { RealtimeService } from '../../../core/services/realtime.service';
 import { ApiError } from '../../../core/http/api-error';
 import {
   EVALUATION_LIMITS,
@@ -32,7 +35,7 @@ import { Stagiaire } from '../../../core/models/stagiaire.model';
   imports: [CommonModule, FormsModule],
   templateUrl: './evaluation-encadrant.component.html'
 })
-export class EvaluationEncadrantComponent implements OnInit {
+export class EvaluationEncadrantComponent implements OnInit, OnDestroy {
   stagiaires: Stagiaire[] = [];
   evaluations: Evaluation[] = [];
 
@@ -71,13 +74,33 @@ export class EvaluationEncadrantComponent implements OnInit {
   readonly statutLabels = STATUT_EVALUATION_LABELS;
   readonly statutBadge = STATUT_EVALUATION_BADGE;
 
+  private realtimeSub?: Subscription;
+
+  /** Admin-only actions (validate, delete) — hidden for encadrants, enforced server-side too. */
+  isAdmin = false;
+
   constructor(
     private evaluationService: EvaluationService,
-    private stagiaireService: StagiaireService
-  ) {}
+    private stagiaireService: StagiaireService,
+    private realtimeService: RealtimeService,
+    private authService: AuthService
+  ) {
+    this.isAdmin = this.authService.isAdmin();
+  }
 
   ngOnInit(): void {
     this.chargerStagiaires();
+
+    // Live refresh — a newly submitted evaluation should show up without a manual reload.
+    this.realtimeSub = this.realtimeService.newNotification$.subscribe(notification => {
+      if (notification.type === 'EvaluationSoumise') {
+        this.chargerStagiaires();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.realtimeSub?.unsubscribe();
   }
 
   chargerStagiaires(): void {

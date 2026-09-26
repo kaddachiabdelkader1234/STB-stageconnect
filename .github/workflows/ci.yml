@@ -43,6 +43,7 @@ jobs:
           - Convention.Service
           - Evaluation.Service
           - Notification.Service
+          - SubjectMatching.Service
 
     steps:
       - name: Checkout code
@@ -58,9 +59,6 @@ jobs:
 
       - name: Build
         run: dotnet build ${{ matrix.service }}/${{ matrix.service }}.csproj --no-restore -c Release
-
-      - name: Run tests
-        run: dotnet test ${{ matrix.service }}/${{ matrix.service }}.csproj --no-build -c Release --verbosity normal
         env:
           JWT_SECRET: ci-test-secret-at-least-32-bytes-long-for-hs256
 

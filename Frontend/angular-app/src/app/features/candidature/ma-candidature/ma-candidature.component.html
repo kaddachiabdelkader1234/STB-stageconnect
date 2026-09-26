@@ -36,8 +36,8 @@
       </div>
       <h3 class="text-2xl font-bold text-gray-800 mb-2">Envoyer votre candidature</h3>
       <p class="text-gray-500 max-w-lg mx-auto">
-        Remplissez le formulaire ci-dessous, téléversez le formulaire de candidature
-        fourni par votre université et votre CV.
+        Remplissez le formulaire ci-dessous, téléversez votre <strong>Demande de stage</strong>
+        (lettre d'affectation ou demande officielle délivrée par votre université) et votre <strong>Curriculum Vitae (CV)</strong>.
       </p>
     </div>
 
@@ -96,10 +96,10 @@
 
       <!-- Documents -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <!-- Candidature document -->
+        <!-- Demande de stage -->
         <div class="rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 p-6 text-center hover:border-primary/50 transition">
           <span class="material-icons text-primary text-4xl mb-3">description</span>
-          <h4 class="font-bold text-gray-800 mb-1">Formulaire de candidature</h4>
+          <h4 class="font-bold text-gray-800 mb-1">Demande de stage</h4>
           <p class="text-xs text-gray-500 mb-4">Document scanné de votre université</p>
 
           <input type="file" (change)="onFileSelected($event, 'candidature')"
@@ -115,7 +115,7 @@
         <!-- CV -->
         <div class="rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 p-6 text-center hover:border-gray-300 transition">
           <span class="material-icons text-gray-400 text-4xl mb-3">person</span>
-          <h4 class="font-bold text-gray-800 mb-1">Curriculum Vitae</h4>
+          <h4 class="font-bold text-gray-800 mb-1">CV</h4>
           <p class="text-xs text-gray-500 mb-4">PDF, DOC, DOCX — 5 Mo max</p>
 
           <input type="file" (change)="onFileSelected($event, 'cv')"
@@ -231,56 +231,132 @@
 
     <!-- Documents panel -->
     <div class="bg-white rounded-2xl shadow-card border border-gray-100 p-6 space-y-6">
-      <!-- Candidature document -->
-      <div>
-        <h3 class="text-lg font-bold text-gray-800 mb-1">Formulaire de candidature</h3>
-        <p class="text-xs text-gray-500 mb-3">Document scanné de votre université</p>
+      <div class="border-b border-gray-100 pb-3">
+        <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+          <span class="material-icons text-primary">folder_shared</span>
+          Documents déposés
+        </h3>
+        <p class="text-xs text-gray-500 mt-0.5">Consultez ou mettez à jour votre demande de stage et votre CV.</p>
+      </div>
 
-        <div *ngIf="candidature.documentDisponible" class="mb-3 flex items-center justify-between rounded-xl border border-gray-100 p-3">
-          <span class="text-sm font-medium text-gray-700 truncate max-w-[180px]">{{ candidature.documentNomFichier }}</span>
-          <button type="button" (click)="telechargerDocument()" class="text-primary hover:text-primary-dark" title="Télécharger">
-            <span class="material-icons">download</span>
+      <!-- Demande de stage -->
+      <div class="rounded-xl border border-gray-100 p-4 bg-gray-50/50">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-2">
+            <span class="material-icons text-primary text-lg">assignment</span>
+            <h4 class="font-bold text-gray-800 text-sm">Demande de stage</h4>
+          </div>
+          <span *ngIf="candidature.documentDisponible" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-green-100 text-green-700">
+            Déposée
+          </span>
+          <span *ngIf="!candidature.documentDisponible" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-700">
+            Non fournie
+          </span>
+        </div>
+        <p class="text-xs text-gray-500 mb-3">Lettre d'affectation ou demande officielle délivrée par votre université</p>
+
+        <div *ngIf="candidature.documentDisponible" class="mb-3 flex items-center justify-between rounded-xl bg-white border border-gray-200 p-2.5 shadow-2xs">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="material-icons text-red-500 text-base">picture_as_pdf</span>
+            <span class="text-xs font-semibold text-gray-700 truncate max-w-[150px]" [title]="candidature.documentNomFichier">
+              {{ candidature.documentNomFichier }}
+            </span>
+          </div>
+          <button type="button" (click)="telechargerDocument()" class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-dark transition" title="Télécharger">
+            <span class="material-icons text-sm">download</span>
+            Télécharger
           </button>
         </div>
 
-        <p *ngIf="!candidature.documentDisponible" class="mb-3 text-sm text-amber-600">
-          Aucun formulaire déposé pour le moment.
+        <p *ngIf="!candidature.documentDisponible" class="mb-3 text-xs text-amber-600 font-medium">
+          Aucune demande de stage déposée pour le moment.
         </p>
 
         <div *ngIf="!decisionPrise" class="space-y-2">
-          <input type="file" (change)="onFileSelected($event, 'candidature')"
-                 class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary hover:file:bg-primary/20">
+          <input type="file" #candidatureReplaceInput (change)="onFileSelected($event, 'candidature')"
+                 accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" class="hidden">
+
+          <button type="button" (click)="candidatureReplaceInput.click()"
+                  class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-semibold transition">
+            <span class="material-icons text-sm">cloud_upload</span>
+            {{ fichierCandidature ? 'Changer le fichier choisi' : (candidature.documentDisponible ? 'Choisir une nouvelle demande' : 'Choisir la demande de stage') }}
+          </button>
+
+          <!-- Selected file preview badge -->
+          <div *ngIf="fichierCandidature" class="flex items-center justify-between rounded-lg bg-green-50 border border-green-200 px-2.5 py-1 text-xs text-green-800">
+            <span class="truncate max-w-[170px] font-medium">{{ fichierCandidature.name }}</span>
+            <button type="button" (click)="retirerFichier('candidature')" class="text-red-500 hover:text-red-700 font-bold ml-1 text-sm">&times;</button>
+          </div>
+
           <button type="button" (click)="remplacerDocument()" [disabled]="!fichierCandidature || uploadEnCours"
-                  class="w-full rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:opacity-90 disabled:opacity-50">
-            {{ uploadEnCours && uploadType === 'candidature' ? 'Envoi…' : (candidature.documentDisponible ? 'Remplacer le formulaire' : 'Envoyer le formulaire') }}
+                  class="w-full rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white shadow-md transition hover:opacity-90 disabled:opacity-50">
+            <span *ngIf="uploadEnCours && uploadType === 'candidature'" class="inline-flex items-center gap-1">
+              <span class="material-icons text-sm animate-spin">refresh</span> Envoi en cours…
+            </span>
+            <span *ngIf="!(uploadEnCours && uploadType === 'candidature')">
+              {{ candidature.documentDisponible ? 'Remplacer la demande de stage' : 'Envoyer la demande de stage' }}
+            </span>
           </button>
         </div>
       </div>
 
-      <hr class="border-gray-100">
-
       <!-- CV -->
-      <div>
-        <h3 class="text-lg font-bold text-gray-800 mb-1">Curriculum Vitae</h3>
+      <div class="rounded-xl border border-gray-100 p-4 bg-gray-50/50">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-2">
+            <span class="material-icons text-primary text-lg">badge</span>
+            <h4 class="font-bold text-gray-800 text-sm">CV</h4>
+          </div>
+          <span *ngIf="candidature.cvDisponible" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-green-100 text-green-700">
+            Déposé
+          </span>
+          <span *ngIf="!candidature.cvDisponible" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-700">
+            Non fourni
+          </span>
+        </div>
         <p class="text-xs text-gray-500 mb-3">PDF, DOC ou DOCX — 5 Mo maximum</p>
 
-        <div *ngIf="candidature.cvDisponible" class="mb-3 flex items-center justify-between rounded-xl border border-gray-100 p-3">
-          <span class="text-sm font-medium text-gray-700 truncate max-w-[180px]">{{ candidature.cvNomFichier }}</span>
-          <button type="button" (click)="telechargerCv()" class="text-primary hover:text-primary-dark" title="Télécharger">
-            <span class="material-icons">download</span>
+        <div *ngIf="candidature.cvDisponible" class="mb-3 flex items-center justify-between rounded-xl bg-white border border-gray-200 p-2.5 shadow-2xs">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="material-icons text-blue-500 text-base">description</span>
+            <span class="text-xs font-semibold text-gray-700 truncate max-w-[150px]" [title]="candidature.cvNomFichier">
+              {{ candidature.cvNomFichier }}
+            </span>
+          </div>
+          <button type="button" (click)="telechargerCv()" class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-dark transition" title="Télécharger">
+            <span class="material-icons text-sm">download</span>
+            Télécharger
           </button>
         </div>
 
-        <p *ngIf="!candidature.cvDisponible" class="mb-3 text-sm text-amber-600">
+        <p *ngIf="!candidature.cvDisponible" class="mb-3 text-xs text-amber-600 font-medium">
           Aucun CV déposé pour le moment.
         </p>
 
         <div *ngIf="!decisionPrise" class="space-y-2">
-          <input type="file" (change)="onFileSelected($event, 'cv')"
-                 class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary hover:file:bg-primary/20">
+          <input type="file" #cvReplaceInput (change)="onFileSelected($event, 'cv')"
+                 accept=".pdf,.doc,.docx" class="hidden">
+
+          <button type="button" (click)="cvReplaceInput.click()"
+                  class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-semibold transition">
+            <span class="material-icons text-sm">cloud_upload</span>
+            {{ fichierCv ? 'Changer le fichier choisi' : (candidature.cvDisponible ? 'Choisir un nouveau CV' : 'Choisir votre CV') }}
+          </button>
+
+          <!-- Selected file preview badge -->
+          <div *ngIf="fichierCv" class="flex items-center justify-between rounded-lg bg-green-50 border border-green-200 px-2.5 py-1 text-xs text-green-800">
+            <span class="truncate max-w-[170px] font-medium">{{ fichierCv.name }}</span>
+            <button type="button" (click)="retirerFichier('cv')" class="text-red-500 hover:text-red-700 font-bold ml-1 text-sm">&times;</button>
+          </div>
+
           <button type="button" (click)="remplacerCv()" [disabled]="!fichierCv || uploadEnCours"
-                  class="w-full rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:opacity-90 disabled:opacity-50">
-            {{ uploadEnCours && uploadType === 'cv' ? 'Envoi…' : (candidature.cvDisponible ? 'Remplacer le CV' : 'Envoyer le CV') }}
+                  class="w-full rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white shadow-md transition hover:opacity-90 disabled:opacity-50">
+            <span *ngIf="uploadEnCours && uploadType === 'cv'" class="inline-flex items-center gap-1">
+              <span class="material-icons text-sm animate-spin">refresh</span> Envoi en cours…
+            </span>
+            <span *ngIf="!(uploadEnCours && uploadType === 'cv')">
+              {{ candidature.cvDisponible ? 'Remplacer le CV' : 'Envoyer le CV' }}
+            </span>
           </button>
         </div>
       </div>

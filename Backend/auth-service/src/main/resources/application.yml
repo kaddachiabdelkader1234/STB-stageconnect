@@ -29,6 +29,14 @@ spring:
     config:
       enabled: false
 
+  # RabbitMQ — publishes EncadrantCreated when an admin creates an encadrant account.
+  # Notification.Service consumes it and emails the welcome message with the password.
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+
 server:
   port: 8081
 

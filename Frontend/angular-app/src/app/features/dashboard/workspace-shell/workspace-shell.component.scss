@@ -1,0 +1,27 @@
+/* Workspace shell — minimal styles; Tailwind utilities carry the design. */
+
+/* Hide scrollbar on the mobile pill nav while keeping scrollability. */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Dropdown entrance. */
+.animate-scale-in {
+  animation: scaleIn 0.15s ease-out;
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Account dropdown closes on outside click is handled by the click handler; also close
+   on Escape for accessibility. */
+:host ::ng-deep .material-icons {
+  user-select: none;
+}

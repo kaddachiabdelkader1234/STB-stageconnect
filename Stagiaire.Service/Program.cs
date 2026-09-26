@@ -43,6 +43,9 @@ builder.Services.AddValidatorsFromAssemblyContaining<StagiaireCreateDtoValidator
 // Audit trail — every state-changing action writes an entry to AuditEntries.
 builder.Services.AddScoped<IAuditService, AuditService>();
 
+// Automated internship lifecycle background worker (promotes Acceptee -> EnCours -> Termine)
+builder.Services.AddHostedService<StagiaireLifecycleBackgroundService>();
+
 // Add MassTransit with RabbitMQ
 builder.Services.AddMassTransit(x =>
 {
@@ -53,6 +56,14 @@ builder.Services.AddMassTransit(x =>
             h.Username(builder.Configuration["RabbitMQ:Username"] ?? "guest");
             h.Password(builder.Configuration["RabbitMQ:Password"] ?? "guest");
         });
+
+        // Retry transient failures with exponential back-off; after the limit the message lands in
+        // the transport dead-letter queue "<queue>_error" rather than being dropped.
+        cfg.UseMessageRetry(r => r.Exponential(
+            retryLimit: 5,
+            minInterval: TimeSpan.FromSeconds(1),
+            maxInterval: TimeSpan.FromSeconds(30),
+            intervalDelta: TimeSpan.FromSeconds(5)));
 
         cfg.ConfigureEndpoints(context);
     });

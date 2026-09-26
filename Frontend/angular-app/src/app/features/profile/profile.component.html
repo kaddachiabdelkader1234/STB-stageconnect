@@ -1,0 +1,103 @@
+<div class="max-w-4xl mx-auto px-4 py-8">
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Mon Profil & Paramètres</h1>
+    <p class="text-sm text-gray-500 mt-1">Consultez vos informations de compte et gérez votre sécurité.</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Account Information Card -->
+    <div class="md:col-span-1 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+      <div class="flex flex-col items-center text-center">
+        <div class="w-20 h-20 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-2xl shadow-inner mb-4">
+          {{ profile?.firstName?.charAt(0) || 'U' }}{{ profile?.lastName?.charAt(0) || '' }}
+        </div>
+        <h2 class="text-lg font-semibold text-gray-900">{{ profile?.firstName }} {{ profile?.lastName }}</h2>
+        <span class="inline-block mt-2 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-wider"
+              [ngClass]="{
+                'bg-purple-100 text-purple-800': profile?.role === 'ADMIN',
+                'bg-blue-100 text-blue-800': profile?.role === 'TRAINER',
+                'bg-emerald-100 text-emerald-800': profile?.role === 'LEARNER'
+              }">
+          {{ profile?.role }}
+        </span>
+      </div>
+
+      <div class="mt-6 border-t border-gray-100 pt-4 space-y-3 text-sm">
+        <div>
+          <span class="text-gray-400 block text-xs">Adresse Email</span>
+          <span class="font-medium text-gray-800">{{ profile?.email }}</span>
+        </div>
+        <div *ngIf="profile?.phone">
+          <span class="text-gray-400 block text-xs">Téléphone</span>
+          <span class="font-medium text-gray-800">{{ profile?.phone }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Password Change Card -->
+    <div class="md:col-span-2 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+      <h3 class="text-base font-semibold text-gray-900 mb-1">Modifier mon mot de passe</h3>
+      <p class="text-xs text-gray-500 mb-6">Assurez-vous de choisir un mot de passe fort d'au moins 8 caractères.</p>
+
+      <!-- Alerts -->
+      <div *ngIf="successMessage" class="mb-4 p-4 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm flex items-center gap-2">
+        <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        </svg>
+        <span>{{ successMessage }}</span>
+      </div>
+
+      <div *ngIf="errorMessage" class="mb-4 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
+        <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+        </svg>
+        <span>{{ errorMessage }}</span>
+      </div>
+
+      <form [formGroup]="passwordForm" (ngSubmit)="onChangePassword()" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Mot de passe actuel</label>
+          <input type="password" formControlName="currentPassword"
+                 placeholder="••••••••"
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+          <p *ngIf="passwordForm.get('currentPassword')?.touched && passwordForm.get('currentPassword')?.hasError('required')"
+             class="text-xs text-red-600 mt-1">Le mot de passe actuel est requis.</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
+          <input type="password" formControlName="newPassword"
+                 placeholder="Au moins 8 caractères"
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+          <p *ngIf="passwordForm.get('newPassword')?.touched && passwordForm.get('newPassword')?.hasError('minlength')"
+             class="text-xs text-red-600 mt-1">Le mot de passe doit comporter au moins 8 caractères.</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Confirmer le nouveau mot de passe</label>
+          <input type="password" formControlName="confirmPassword"
+                 placeholder="••••••••"
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+          <p *ngIf="passwordForm.hasError('mismatch') && passwordForm.get('confirmPassword')?.touched"
+             class="text-xs text-red-600 mt-1">Les mots de passe ne correspondent pas.</p>
+        </div>
+
+        <div class="pt-2 flex justify-end">
+          <button type="submit"
+                  [disabled]="passwordForm.invalid || isLoading"
+                  class="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition disabled:opacity-50 disabled:cursor-not-allowed">
+            <span *ngIf="!isLoading">Enregistrer le nouveau mot de passe</span>
+            <span *ngIf="isLoading" class="flex items-center gap-2">
+              <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              Enregistrement...
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

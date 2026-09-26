@@ -1,3 +1,7 @@
+# ClusterIP Services — one per Deployment. Names must match what the other services resolve:
+# the .NET services find the gateway via Eureka, and the gateway routes by service id
+# (lb://STAGIAIRE-SERVICE), never by these DNS names.
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,6 +13,19 @@ spec:
   ports:
   - port: 8761
     targetPort: 8761
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: config-server
+  namespace: gestion-stagiaires-stb
+spec:
+  selector:
+    app: config-server
+  ports:
+  - port: 8888
+    targetPort: 8888
   type: ClusterIP
 ---
 apiVersion: v1
@@ -33,6 +50,72 @@ spec:
   selector:
     app: api-gateway
   ports:
+  # The gateway itself listens on 18080 (not 8080).
+  - port: 18080
+    targetPort: 18080
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stagiaire-service
+  namespace: gestion-stagiaires-stb
+spec:
+  selector:
+    app: stagiaire-service
+  ports:
   - port: 8080
     targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: convention-service
+  namespace: gestion-stagiaires-stb
+spec:
+  selector:
+    app: convention-service
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: evaluation-service
+  namespace: gestion-stagiaires-stb
+spec:
+  selector:
+    app: evaluation-service
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: gestion-stagiaires-stb
+spec:
+  selector:
+    app: notification-service
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: gestion-stagiaires-stb
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 80
+    targetPort: 80
   type: ClusterIP

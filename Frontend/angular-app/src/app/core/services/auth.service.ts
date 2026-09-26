@@ -21,6 +21,8 @@ export interface AuthResponse {
   userId?: number;
   email?: string;
   firstName?: string;
+  lastName?: string;
+  phone?: string;
   /** Singular — this is what the API sends. */
   role?: string;
   /** Only present if auth-service is later changed to emit multiple roles. */
@@ -35,6 +37,8 @@ export interface UserProfile {
   userId?: number;
   email?: string;
   firstName?: string;
+  lastName?: string;
+  phone?: string;
   role?: string;
   imageBase64?: string;
   experience?: number;
@@ -138,6 +142,29 @@ export class AuthService {
     return this.refreshTokenValue;
   }
 
+  forgotPassword(email: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/forgot-password`, { email }).pipe(
+      catchError(error => throwError(() => toApiError(error)))
+    );
+  }
+
+  resetPassword(token: string, newPassword: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/reset-password`, { token, newPassword }).pipe(
+      catchError(error => throwError(() => toApiError(error)))
+    );
+  }
+
+  changePassword(currentPassword: string, newPassword: string): Observable<AuthResponse> {
+    const userId = this.userProfile?.userId;
+    return this.http.post<AuthResponse>(`${this.apiUrl}/change-password`, {
+      userId,
+      currentPassword,
+      newPassword
+    }).pipe(
+      catchError(error => throwError(() => toApiError(error)))
+    );
+  }
+
   /**
    * Attempts to refresh the access token using the stored refresh token.
    * Returns true if successful, false if the refresh token is expired/invalid.
@@ -219,6 +246,8 @@ function toProfile(response: AuthResponse): UserProfile {
     userId: response.userId,
     email: response.email,
     firstName: response.firstName,
+    lastName: response.lastName,
+    phone: response.phone,
     role: response.role,
     imageBase64: response.imageBase64,
     experience: response.experience

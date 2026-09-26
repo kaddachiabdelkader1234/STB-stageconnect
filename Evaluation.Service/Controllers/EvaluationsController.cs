@@ -15,6 +15,7 @@ using EvaluationEntity = Evaluation.Service.Models.Evaluation;
 // The contract enums mirror the model enums member-for-member, so importing both namespaces would
 // make every bare `TypeEvaluation` ambiguous. Model enums stay bare; contract types are aliased.
 using EvaluationSubmitted = Stagiaire.Contracts.Events.EvaluationSubmitted;
+using EvaluationValidated = Stagiaire.Contracts.Events.EvaluationValidated;
 using EventStatut = Stagiaire.Contracts.Events.StatutEvaluation;
 using EventType = Stagiaire.Contracts.Events.TypeEvaluation;
 
@@ -275,6 +276,20 @@ public class EvaluationsController : ControllerBase
             entity.Id.ToString(),
             $"Évaluation {entity.TypeEvaluation} de {entity.StagiairePrenom} {entity.StagiaireNom} validée — note: {entity.Note}/20",
             cancellationToken);
+
+        // Tell the learner their result is now official, and the encadrant their grading was
+        // approved — notification-service turns this into in-app notifications + SignalR popups.
+        await _publishEndpoint.Publish(new EvaluationValidated(
+            entity.Id,
+            entity.StagiaireId,
+            entity.StagiaireNom,
+            entity.StagiairePrenom,
+            entity.StagiaireEmail,
+            entity.UtilisateurId,
+            entity.EncadrantId,
+            ToEventType(entity.TypeEvaluation),
+            entity.Note
+        ), cancellationToken);
 
         return Ok(ToReadDto(entity));
     }

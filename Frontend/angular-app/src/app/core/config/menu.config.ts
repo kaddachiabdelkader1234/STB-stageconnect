@@ -28,13 +28,13 @@ export const MENU_ITEMS: MenuItem[] = [
   {
     label: 'Tableau de bord',
     icon: 'dashboard',
-    route: '/dashboard'
+    route: '/admin'
   },
   {
     label: 'Notifications',
     icon: 'notifications',
-    route: '/dashboard/notifications',
-    roles: [Role.LEARNER, Role.TRAINER, Role.ADMIN]
+    route: '/espace/notifications',
+    roles: [Role.LEARNER, Role.TRAINER]
   },
 
   // ---------- Stagiaire ----------
@@ -46,25 +46,31 @@ export const MENU_ITEMS: MenuItem[] = [
   {
     label: 'Ma candidature',
     icon: 'assignment',
-    route: '/dashboard/ma-candidature',
+    route: '/espace/ma-candidature',
     roles: [Role.LEARNER]
   },
   {
     label: 'Ma convention',
     icon: 'description',
-    route: '/dashboard/ma-convention',
+    route: '/espace/ma-convention',
     roles: [Role.LEARNER]
   },
   {
     label: 'Mon journal de bord',
     icon: 'menu_book',
-    route: '/dashboard/mon-journal',
+    route: '/espace/mon-journal',
     roles: [Role.LEARNER]
   },
   {
     label: 'Mon évaluation',
     icon: 'grading',
-    route: '/dashboard/mes-evaluations',
+    route: '/espace/mes-evaluations',
+    roles: [Role.LEARNER]
+  },
+  {
+    label: 'Mon sujet de stage',
+    icon: 'lightbulb',
+    route: '/espace/mon-sujet',
     roles: [Role.LEARNER]
   },
 
@@ -77,31 +83,49 @@ export const MENU_ITEMS: MenuItem[] = [
   {
     label: 'Créer un encadrant',
     icon: 'person_add',
-    route: '/dashboard/creer-encadrant',
+    route: '/admin/creer-encadrant',
+    roles: [Role.ADMIN]
+  },
+  {
+    label: 'Comptes',
+    icon: 'manage_accounts',
+    route: '/admin/comptes',
     roles: [Role.ADMIN]
   },
   {
     label: 'Candidatures',
     icon: 'how_to_reg',
-    route: '/dashboard/candidatures',
+    route: '/admin/candidatures',
+    roles: [Role.ADMIN]
+  },
+  {
+    label: 'Sujets de stage',
+    icon: 'lightbulb',
+    route: '/admin/subjects',
+    roles: [Role.ADMIN]
+  },
+  {
+    label: 'Demandes de changement',
+    icon: 'swap_horiz',
+    route: '/admin/subject-change-requests',
     roles: [Role.ADMIN]
   },
   {
     label: 'Conventions',
     icon: 'description',
-    route: '/dashboard/conventions',
+    route: '/admin/conventions',
     roles: [Role.ADMIN]
   },
   {
     label: 'Stagiaires',
     icon: 'people',
-    route: '/dashboard/stagiaires',
+    route: '/admin/stagiaires',
     roles: [Role.ADMIN]
   },
   {
     label: 'Journal d\'audit',
     icon: 'history',
-    route: '/dashboard/audit',
+    route: '/admin/audit',
     roles: [Role.ADMIN]
   },
 
@@ -114,19 +138,19 @@ export const MENU_ITEMS: MenuItem[] = [
   {
     label: 'Mes stagiaires',
     icon: 'supervisor_account',
-    route: '/dashboard/mes-stagiaires',
+    route: '/espace/mes-stagiaires',
     roles: [Role.TRAINER]
   },
   {
     label: 'Journaux de bord',
     icon: 'rate_review',
-    route: '/dashboard/journaux',
+    route: '/espace/journaux',
     roles: [Role.TRAINER]
   },
   {
     label: 'Évaluations',
     icon: 'grading',
-    route: '/dashboard/evaluations',
+    route: '/espace/evaluations',
     roles: [Role.TRAINER]
   }
 ];

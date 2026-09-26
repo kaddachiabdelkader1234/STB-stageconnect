@@ -20,6 +20,10 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.7.3" />
     <PackageReference Include="MassTransit" Version="8.1.3" />
     <PackageReference Include="MassTransit.RabbitMQ" Version="8.1.3" />
+    <!-- SignalR server types (Hub, IHubContext) ship in the Microsoft.AspNetCore.App shared
+         framework for this SDK="Microsoft.NET.Sdk.Web" project — there is no
+         Microsoft.AspNetCore.SignalR NuGet package at 8.x, so do NOT add one back. The Angular
+         client uses the separate @microsoft/signalr npm package. -->
   </ItemGroup>
 
   <ItemGroup>

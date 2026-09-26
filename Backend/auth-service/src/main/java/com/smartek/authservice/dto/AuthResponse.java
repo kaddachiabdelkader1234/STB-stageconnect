@@ -19,6 +19,8 @@ public class AuthResponse {
     private Long userId;
     private String email;
     private String firstName;
+    private String lastName;
+    private String phone;
     private RoleType role;
     private String imageBase64; // Image en base64 pour le frontend
     private Integer experience;

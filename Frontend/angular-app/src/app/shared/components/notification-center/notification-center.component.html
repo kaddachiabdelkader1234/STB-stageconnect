@@ -1,0 +1,102 @@
+<!-- Backdrop -->
+<div class="fixed inset-0 z-[9980] bg-slate-950/40 backdrop-blur-sm"
+     *ngIf="open()"
+     (click)="close()"></div>
+
+<!-- Slide-over panel -->
+<aside class="fixed top-0 right-0 z-[9990] h-full w-full max-w-md
+              bg-white dark:bg-[#0f172a] shadow-2xl flex flex-col
+              transform transition-transform duration-300"
+       [class.translate-x-0]="open()"
+       [class.translate-x-full]="!open()"
+       role="dialog"
+       aria-label="Centre de notifications">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+    <div class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center">
+        <span class="material-icons text-white text-lg">notifications</span>
+      </div>
+      <div>
+        <h2 class="font-bold text-gray-900 dark:text-gray-100 text-sm">Notifications</h2>
+        <p class="text-xs text-gray-400">{{ unread() ?? 0 }} non lue(s)</p>
+      </div>
+    </div>
+    <button (click)="close()"
+            class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+      <span class="material-icons text-lg">close</span>
+    </button>
+  </header>
+
+  <!-- Filters -->
+  <div class="flex items-center gap-2 px-5 py-3 border-b border-gray-100 dark:border-gray-800">
+    <button (click)="setFilter('all')"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+            [class]="filter() === 'all'
+              ? 'bg-primary text-white'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'">
+      Toutes
+    </button>
+    <button (click)="setFilter('unread')"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition inline-flex items-center gap-1"
+            [class]="filter() === 'unread'
+              ? 'bg-primary text-white'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'">
+      Non lues
+      <span *ngIf="unreadCount() > 0" class="min-w-4 h-4 px-1 inline-flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold">
+        {{ unreadCount() }}
+      </span>
+    </button>
+    <button *ngIf="unreadCount() > 0" (click)="markAllRead()"
+            class="ml-auto text-xs font-semibold text-primary dark:text-sky-400 hover:underline">
+      Tout marquer lu
+    </button>
+  </div>
+
+  <!-- Body -->
+  <div class="flex-1 overflow-y-auto">
+    <!-- Loading -->
+    <div *ngIf="loading()" class="p-10 text-center">
+      <div class="animate-spin w-7 h-7 border-[3px] border-primary border-t-transparent rounded-full mx-auto"></div>
+      <p class="text-xs text-gray-400 mt-3">Chargement…</p>
+    </div>
+
+    <!-- Empty -->
+    <div *ngIf="!loading() && filtered().length === 0" class="p-10 text-center">
+      <span class="material-icons text-4xl text-gray-300 dark:text-gray-700">notifications_none</span>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-3">
+        {{ filter() === 'unread' ? 'Aucune notification non lue' : 'Aucune notification' }}
+      </p>
+    </div>
+
+    <!-- List -->
+    <ul *ngIf="!loading()" class="divide-y divide-gray-50 dark:divide-gray-800/60">
+      <li *ngFor="let n of filtered()">
+        <div (click)="markAsRead(n)"
+             class="cursor-pointer w-full text-left px-5 py-4 flex gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
+
+          <div class="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
+               [ngClass]="getTypeColor(n.type)">
+            <span class="material-icons text-base">{{ getTypeIcon(n.type) }}</span>
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-[11px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                {{ getTypeLabel(n.type) }}
+              </span>
+              <span *ngIf="isAdmin"
+                    class="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500">
+                {{ getRoleLabel(n.destinataireRole) }} #{{ n.destinataireId }}
+              </span>
+              <span *ngIf="!n.lu" class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+            </div>
+            <p class="text-sm text-gray-700 dark:text-gray-200 mt-0.5 leading-snug">{{ n.message }}</p>
+            <p class="text-[11px] text-gray-400 mt-1">{{ n.dateCreation | date:'dd/MM/yyyy à HH:mm' }}</p>
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+</aside>

@@ -7,19 +7,28 @@ import com.smartek.authservice.dto.UserSummaryResponse;
 import com.smartek.authservice.entity.User;
 import com.smartek.authservice.enums.RoleType;
 import com.smartek.authservice.repository.UserRepository;
+import com.smartek.authservice.config.RabbitConfig;
+import com.smartek.authservice.exception.DuplicateEmailException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.smartek.authservice.dto.ChangePasswordRequest;
+import com.smartek.authservice.dto.ForgotPasswordRequest;
+import com.smartek.authservice.dto.ResetPasswordRequest;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +40,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final JdbcTemplate jdbcTemplate;
+    private final RabbitTemplate rabbitTemplate;
     
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -38,7 +48,9 @@ public class AuthService {
         
         // Vérifier si l'email existe déjà
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Cet email est déjà utilisé");
+            // Specific type so the controller returns 409 with this exact message instead
+            // of a generic 400 — the signup form can then tell the user what is wrong.
+            throw new DuplicateEmailException("Cet email est déjà utilisé");
         }
         
         // SECURITY FIX: Always force LEARNER role for public registration.
@@ -50,6 +62,7 @@ public class AuthService {
         // Créer le nouvel utilisateur
         User user = User.builder()
                 .firstName(request.getFirstName())
+                .lastName(request.getLastName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())
@@ -77,6 +90,8 @@ public class AuthService {
                 .userId(savedUser.getUserId())
                 .email(savedUser.getEmail())
                 .firstName(savedUser.getFirstName())
+                .lastName(savedUser.getLastName())
+                .phone(savedUser.getPhone())
                 .role(savedUser.getRole())
                 .imageBase64(convertBytesToBase64(savedUser.getImage()))
                 .experience(savedUser.getExperience())
@@ -118,6 +133,8 @@ public class AuthService {
                 .userId(user.getUserId())
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .phone(user.getPhone())
                 .role(user.getRole())
                 .imageBase64(convertBytesToBase64(user.getImage()))
                 .experience(user.getExperience())
@@ -178,6 +195,8 @@ public class AuthService {
                 .userId(user.getUserId())
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .phone(user.getPhone())
                 .role(user.getRole())
                 .imageBase64(convertBytesToBase64(user.getImage()))
                 .experience(user.getExperience())
@@ -192,21 +211,48 @@ public class AuthService {
     @Transactional
     public AuthResponse createEncadrant(com.smartek.authservice.dto.CreateEncadrantRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Cet email est déjà utilisé");
+            throw new DuplicateEmailException("Cet email est déjà utilisé");
         }
 
         String tempPassword = generateTempPassword();
 
         User user = User.builder()
                 .firstName(request.getFirstName())
+                .lastName(request.getLastName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(tempPassword))
+                .phone(request.getPhone())
                 .role(RoleType.TRAINER)
                 .experience(0)
                 .build();
 
         User savedUser = userRepository.save(user);
         log.info("Encadrant créé par admin: {} (email: {})", savedUser.getFirstName(), savedUser.getEmail());
+
+        // Hand the credentials to notification-service via RabbitMQ — a branded welcome email
+        // is sent to the encadrant's inbox instead of the admin copying a password off screen.
+        // Publishing happens AFTER the DB commit scope (method is @Transactional, publish fires
+        // at the end) — if SMTP fails, notification-service retries; the account already exists.
+        try {
+            rabbitTemplate.convertAndSend(
+                    RabbitConfig.EVENTS_EXCHANGE,
+                    RabbitConfig.ENCADRANT_CREATED_KEY,
+                    RabbitConfig.encadrantCreatedPayload(
+                            savedUser.getUserId(),
+                            savedUser.getFirstName(),
+                            savedUser.getLastName(),
+                            savedUser.getEmail(),
+                            request.getDepartement(),
+                            request.getPhone(),
+                            tempPassword));
+            log.info("Événement EncadrantCreated publié pour {} (routing key: {})",
+                    savedUser.getEmail(), RabbitConfig.ENCADRANT_CREATED_KEY);
+        } catch (Exception e) {
+            // The account is created either way — a failed publish must not fail the HTTP call.
+            // The admin sees a warning in the UI and can resend from the mail server logs.
+            log.error("Impossible de publier EncadrantCreated pour {}: {}",
+                    savedUser.getEmail(), e.getMessage());
+        }
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", savedUser.getRole().name());
@@ -219,8 +265,10 @@ public class AuthService {
                 .userId(savedUser.getUserId())
                 .email(savedUser.getEmail())
                 .firstName(savedUser.getFirstName())
+                .lastName(savedUser.getLastName())
+                .phone(savedUser.getPhone())
                 .role(savedUser.getRole())
-                .message("Encadrant créé. Mot de passe temporaire: " + tempPassword)
+                .message("Encadrant créé. Un email de bienvenue avec les identifiants a été envoyé à " + savedUser.getEmail())
                 .build();
     }
 
@@ -243,13 +291,224 @@ public class AuthService {
      */
     public List<UserSummaryResponse> getUsersByRole(RoleType role) {
         return userRepository.findByRole(role).stream()
-                .map(user -> UserSummaryResponse.builder()
-                        .userId(user.getUserId())
-                        .email(user.getEmail())
-                        .firstName(user.getFirstName())
-                        .role(user.getRole())
-                        .build())
+                .map(AuthService::toSummary)
                 .toList();
+    }
+
+    /**
+     * Re-issues credentials for an existing account: generates a new password, stores its hash
+     * and publishes an EncadrantCreated event with {@code IsPasswordReset=true} so the encadrant
+     * receives an email with the new password.
+     *
+     * The original password is BCrypt-hashed and cannot be recovered — "resend" therefore means
+     * "reset and resend by email". Admin-only; the seeded admin account is refused because it
+     * must never be locked out.
+     */
+    @Transactional
+    public AuthResponse resetAndResendCredentials(Long userId) {
+        if (userId == 1L) {
+            throw new IllegalStateException("Les identifiants du compte administrateur principal ne peuvent pas être réinitialisés.");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
+        String newPassword = generateTempPassword();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setRefreshToken(null);
+        User savedUser = userRepository.save(user);
+        log.info("Réinitialisation des identifiants de {} (userId {}) par un admin", savedUser.getEmail(), userId);
+
+        try {
+            rabbitTemplate.convertAndSend(
+                    RabbitConfig.EVENTS_EXCHANGE,
+                    RabbitConfig.ENCADRANT_CREATED_KEY,
+                    RabbitConfig.encadrantCreatedPayload(
+                            savedUser.getUserId(),
+                            savedUser.getFirstName(),
+                            savedUser.getLastName(),
+                            savedUser.getEmail(),
+                            null,
+                            savedUser.getPhone(),
+                            newPassword,
+                            true));
+            log.info("Événement EncadrantCreated (reset) publié pour {}", savedUser.getEmail());
+        } catch (Exception e) {
+            // The new password is already stored — a failed publish must not roll it back,
+            // otherwise the account would keep the old password while the email never goes out.
+            log.error("Impossible de publier EncadrantCreated (reset) pour {}: {}",
+                    savedUser.getEmail(), e.getMessage());
+            throw new RuntimeException("La réinitialisation a eu lieu mais l'envoi de l'email a échoué. Réessayez.");
+          }
+
+        return AuthResponse.builder()
+                .userId(savedUser.getUserId())
+                .email(savedUser.getEmail())
+                .firstName(savedUser.getFirstName())
+                .lastName(savedUser.getLastName())
+                .role(savedUser.getRole())
+                .message("Nouveaux identifiants envoyés par email à " + savedUser.getEmail())
+                .build();
+    }
+
+    /**
+     * Every account on the platform, newest first — backs the admin's accounts-management
+     * screen. Same summary shape as {@link #getUsersByRole}: no tokens, no password hashes,
+     * no base64 image.
+     */
+    public List<UserSummaryResponse> getAllUsers() {
+        return userRepository.findAllByOrderByUserIdDesc().stream()
+                .map(AuthService::toSummary)
+                .toList();
+    }
+
+    /**
+     * Deletes an account. The seeded admin is protected so it is never possible
+     * to lock yourself out of the platform — callers get a clear 409/400 rather than a
+     * silent failure.
+     */
+    public void deleteUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+        if (userId == 1L || "admin@stb.tn".equalsIgnoreCase(user.getEmail())) {
+            throw new IllegalStateException("Le compte administrateur principal ne peut pas être supprimé.");
+        }
+        userRepository.deleteById(userId);
+        log.info("Utilisateur {} ({}) supprimé par un admin", userId, user.getEmail());
+    }
+
+    /**
+     * Changes password for an authenticated user.
+     */
+    public AuthResponse changePassword(Long userId, String email, ChangePasswordRequest request) {
+        User user = null;
+        if (userId != null) {
+            user = userRepository.findById(userId).orElse(null);
+        }
+        if (user == null && email != null) {
+            user = userRepository.findByEmail(email).orElse(null);
+        }
+        if (user == null && request.getUserId() != null) {
+            user = userRepository.findById(request.getUserId()).orElse(null);
+        }
+        if (user == null) {
+            throw new RuntimeException("Utilisateur non trouvé");
+        }
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("L'ancien mot de passe est incorrect.");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        log.info("Mot de passe mis à jour pour l'utilisateur {}", user.getEmail());
+
+        return AuthResponse.builder()
+                .userId(user.getUserId())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .role(user.getRole())
+                .message("Mot de passe mis à jour avec succès.")
+                .build();
+    }
+
+    /**
+     * Self-service password recovery: generates a secure one-time reset link (valid 30 min)
+     * and sends email via RabbitMQ without altering the user's current password.
+     */
+    public AuthResponse forgotPassword(ForgotPasswordRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+        Optional<User> optionalUser = userRepository.findByEmail(email);
+
+        if (optionalUser.isEmpty()) {
+            // Anti-enumeration: Return success message even if email doesn't exist
+            return AuthResponse.builder()
+                    .email(email)
+                    .message("Si un compte existe pour cet email, un lien sécurisé de réinitialisation vous a été envoyé par email.")
+                    .build();
+        }
+
+        User user = optionalUser.get();
+        String resetToken = UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "");
+        Instant expiresAt = Instant.now().plus(30, ChronoUnit.MINUTES);
+
+        user.setResetPasswordToken(resetToken);
+        user.setResetPasswordExpiresAt(expiresAt);
+        User savedUser = userRepository.save(user);
+
+        String resetUrl = "http://localhost:4200/reset-password?token=" + resetToken;
+
+        try {
+            rabbitTemplate.convertAndSend(
+                    RabbitConfig.EVENTS_EXCHANGE,
+                    RabbitConfig.PASSWORD_RESET_REQUESTED_KEY,
+                    RabbitConfig.passwordResetRequestedPayload(
+                            savedUser.getUserId(),
+                            savedUser.getEmail(),
+                            savedUser.getFirstName(),
+                            savedUser.getLastName(),
+                            resetToken,
+                            resetUrl,
+                            expiresAt,
+                            UUID.randomUUID().toString()));
+            log.info("Lien de réinitialisation de mot de passe envoyé avec succès pour {}", savedUser.getEmail());
+        } catch (Exception e) {
+            log.error("Erreur lors de l'envoi de l'événement de réinitialisation pour {}: {}", savedUser.getEmail(), e.getMessage());
+        }
+
+        return AuthResponse.builder()
+                .userId(savedUser.getUserId())
+                .email(savedUser.getEmail())
+                .message("Si un compte existe pour cet email, un lien sécurisé de réinitialisation vous a été envoyé par email.")
+                .build();
+    }
+
+    /**
+     * Completes password reset using the secure one-time token provided in the email link.
+     */
+    public AuthResponse resetPassword(ResetPasswordRequest request) {
+        String token = request.getToken().trim();
+        String newPassword = request.getNewPassword().trim();
+
+        if (token.isBlank() || newPassword.length() < 8) {
+            throw new RuntimeException("Le mot de passe doit contenir au moins 8 caractères.");
+        }
+
+        User user = userRepository.findByResetPasswordToken(token)
+                .orElseThrow(() -> new RuntimeException("Le lien de réinitialisation est invalide ou a expiré. Veuillez refaire une demande."));
+
+        if (user.getResetPasswordExpiresAt() == null || user.getResetPasswordExpiresAt().isBefore(Instant.now())) {
+            user.setResetPasswordToken(null);
+            user.setResetPasswordExpiresAt(null);
+            userRepository.save(user);
+            throw new RuntimeException("Le lien de réinitialisation a expiré. Veuillez refaire une demande.");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setResetPasswordToken(null);
+        user.setResetPasswordExpiresAt(null);
+        user.setRefreshToken(null); // Force clean re-login
+        userRepository.save(user);
+
+        log.info("Mot de passe réinitialisé avec succès via lien sécurisé pour {}", user.getEmail());
+
+        return AuthResponse.builder()
+                .userId(user.getUserId())
+                .email(user.getEmail())
+                .message("Votre mot de passe a été réinitialisé avec succès. Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.")
+                .build();
+    }
+
+    private static UserSummaryResponse toSummary(User user) {
+        return UserSummaryResponse.builder()
+                .userId(user.getUserId())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .phone(user.getPhone())
+                .role(user.getRole())
+                .createdAt(user.getCreatedAt())
+                .build();
     }
     
     public AuthResponse getUserById(Long userId) {
@@ -260,6 +519,8 @@ public class AuthService {
                 .userId(user.getUserId())
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .phone(user.getPhone())
                 .role(user.getRole())
                 .imageBase64(convertBytesToBase64(user.getImage()))
                 .experience(user.getExperience())

@@ -153,8 +153,8 @@ export class MaCandidatureComponent implements OnInit {
         this.uploadEnCours = false;
         this.uploadType = null;
         this.succes = type === 'candidature'
-          ? 'Formulaire de candidature envoyé.'
-          : 'CV envoyé.';
+          ? 'Demande de stage envoyée avec succès.'
+          : 'CV envoyé avec succès.';
 
         // Chain: after candidature doc, upload CV
         if (type === 'candidature' && this.fichierCv) {
@@ -170,6 +170,21 @@ export class MaCandidatureComponent implements OnInit {
         this.erreur = error.fieldErrors?.['fichier']?.[0] ?? error.message;
       }
     });
+  }
+
+  formatFileSize(bytes?: number): string {
+    if (!bytes) return '';
+    if (bytes < 1024) return bytes + ' o';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' Ko';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' Mo';
+  }
+
+  retirerFichier(type: 'candidature' | 'cv'): void {
+    if (type === 'candidature') {
+      this.fichierCandidature = null;
+    } else {
+      this.fichierCv = null;
+    }
   }
 
   remplacerDocument(): void {

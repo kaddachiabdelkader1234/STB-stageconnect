@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
@@ -7,6 +8,15 @@ import { CandidatureService } from '../../../core/services/candidature.service';
 import { UserService, UserSummary } from '../../../core/services/user.service';
 import { ApiError } from '../../../core/http/api-error';
 import { PagedResult } from '../../../core/models/paged-result.model';
+import { RealtimeService } from '../../../core/services/realtime.service';
+import { SubjectService } from '../../../core/services/subject.service';
+import { MatchingService } from '../../../core/services/matching.service';
+import {
+  CandidateProfile,
+  SubjectMatch,
+  SubjectAssignment,
+  InternshipSubject
+} from '../../../core/models/subject-matching.model';
 import {
   Stagiaire,
   StagiaireQuery,
@@ -30,7 +40,7 @@ import {
   imports: [CommonModule, FormsModule],
   templateUrl: './candidatures-admin.component.html'
 })
-export class CandidaturesAdminComponent implements OnInit {
+export class CandidaturesAdminComponent implements OnInit, OnDestroy {
   page: PagedResult<Stagiaire> | null = null;
   chargement = true;
   erreur: string | null = null;
@@ -47,14 +57,28 @@ export class CandidaturesAdminComponent implements OnInit {
 
   /** Candidature being acted on, and which panel is open. */
   selection: Stagiaire | null = null;
-  mode: 'accepter' | 'rejeter' | null = null;
+  mode: 'accepter' | 'rejeter' | 'ia' | null = null;
   actionEnCours = false;
+
+  // AI Matching state
+  profilIa: CandidateProfile | null = null;
+  recommandations: SubjectMatch[] = [];
+  affectationActuelle: SubjectAssignment | null = null;
+  chargementIa = false;
+  erreurIa: string | null = null;
+  succesIa: string | null = null;
+  proposerEnCoursId: string | null = null;
 
   // Accept form
   encadrantId: number | null = null;
   departement = '';
   dateDebut = '';
   dateFin = '';
+  selectedSubjectId: string | null = null;
+  sujetsDisponibles: InternshipSubject[] = [];
+  chargementSujets = false;
+  topRecommendation: SubjectMatch | null = null;
+  analyseIaErreur: string | null = null;
 
   // Reject form
   motifRejet = '';
@@ -74,16 +98,33 @@ export class CandidaturesAdminComponent implements OnInit {
   previewSafeUrl: SafeResourceUrl | null = null;
   previewLoading = false;
 
+  private realtimeSub?: Subscription;
+
   constructor(
     private stagiaireService: StagiaireService,
     private candidatureService: CandidatureService,
     private userService: UserService,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private realtimeService: RealtimeService,
+    private subjectService: SubjectService,
+    private matchingService: MatchingService
   ) {}
 
   ngOnInit(): void {
     this.charger();
     this.chargerEncadrants();
+
+    // Live refresh — when a candidature is accepted or rejected, reload the queue so the table
+    // never shows a stale status. Scoped server-side to this user's own notifications.
+    this.realtimeSub = this.realtimeService.newNotification$.subscribe(notification => {
+      if (notification.type === 'CandidatureAcceptee' || notification.type === 'CandidatureRejetee') {
+        this.charger();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.realtimeSub?.unsubscribe();
   }
 
   charger(): void {
@@ -131,6 +172,12 @@ export class CandidaturesAdminComponent implements OnInit {
     this.mode = mode;
     this.erreursChamps = {};
     this.erreur = null;
+    this.selectedSubjectId = null;
+    this.topRecommendation = null;
+    this.recommandations = [];
+    this.profilIa = null;
+    this.erreurIa = null;
+    this.succesIa = null;
 
     // Prefill with what the candidate requested, so accepting unchanged is one click.
     this.departement = candidature.departement;
@@ -138,11 +185,200 @@ export class CandidaturesAdminComponent implements OnInit {
     this.dateFin = candidature.dateFin;
     this.encadrantId = null;
     this.motifRejet = '';
+
+    if (mode === 'accepter') {
+      this.preparerAcceptation(candidature);
+    }
+  }
+
+  preparerAcceptation(candidature: Stagiaire): void {
+    this.chargementSujets = true;
+    this.chargementIa = true;
+    this.analyseIaErreur = null;
+
+    // 1. Charger tous les sujets disponibles (Open)
+    this.subjectService.getSubjects({ status: 'Open' }).subscribe({
+      next: sujets => {
+        if (sujets && sujets.length > 0) {
+          this.sujetsDisponibles = sujets;
+          this.chargementSujets = false;
+        } else {
+          this.subjectService.getSubjects().subscribe({
+            next: allSujets => {
+              this.sujetsDisponibles = allSujets;
+              this.chargementSujets = false;
+            },
+            error: () => {
+              this.chargementSujets = false;
+            }
+          });
+        }
+      },
+      error: () => {
+        this.subjectService.getSubjects().subscribe({
+          next: allSujets => {
+            this.sujetsDisponibles = allSujets;
+            this.chargementSujets = false;
+          },
+          error: () => {
+            this.chargementSujets = false;
+          }
+        });
+      }
+    });
+
+    // 2. Déclencher automatiquement l'analyse IA ou charger le profil existant
+    this.matchingService.getCandidateProfile(candidature.id).subscribe({
+      next: profile => {
+        this.profilIa = profile;
+        this.chargerRecommandationsPourAcceptation(candidature.id);
+      },
+      error: () => {
+        // Profil non existant : lancer l'analyse automatique du CV
+        this.matchingService.analyzeCandidate(candidature.id, false, candidature.utilisateurId ?? undefined).subscribe({
+          next: profile => {
+            this.profilIa = profile;
+            this.chargerRecommandationsPourAcceptation(candidature.id);
+          },
+          error: err => {
+            this.chargementIa = false;
+            this.analyseIaErreur = err.error?.error || "L'analyse automatique du profil n'a pas pu être effectuée.";
+          }
+        });
+      }
+    });
+  }
+
+  chargerRecommandationsPourAcceptation(stagiaireId: string): void {
+    this.matchingService.getRecommendations(stagiaireId).subscribe({
+      next: list => {
+        this.recommandations = list;
+        this.chargementIa = false;
+        if (list.length > 0) {
+          this.topRecommendation = list[0];
+          // Pré-sélectionner automatiquement le meilleur sujet recommandé
+          this.selectedSubjectId = list[0].subjectId;
+          if (list[0].department) {
+            this.departement = list[0].department;
+          }
+        }
+      },
+      error: () => {
+        this.chargementIa = false;
+      }
+    });
+  }
+
+  onSubjectSelected(subjectId: string): void {
+    this.selectedSubjectId = subjectId;
+    const match = this.recommandations.find(r => r.subjectId === subjectId);
+    if (match?.department) {
+      this.departement = match.department;
+    } else {
+      const subject = this.sujetsDisponibles.find(s => s.id === subjectId);
+      if (subject?.department) {
+        this.departement = subject.department;
+      }
+    }
   }
 
   fermer(): void {
     this.selection = null;
     this.mode = null;
+    this.profilIa = null;
+    this.recommandations = [];
+    this.affectationActuelle = null;
+    this.erreurIa = null;
+    this.succesIa = null;
+    this.selectedSubjectId = null;
+    this.topRecommendation = null;
+    this.sujetsDisponibles = [];
+    this.analyseIaErreur = null;
+  }
+
+  ouvrirAiMatching(candidature: Stagiaire): void {
+    this.selection = candidature;
+    this.mode = 'ia';
+    this.erreurIa = null;
+    this.succesIa = null;
+    this.profilIa = null;
+    this.recommandations = [];
+    this.affectationActuelle = null;
+
+    // Check existing assignment
+    this.subjectService.getAssignmentByStagiaire(candidature.id).subscribe({
+      next: a => { this.affectationActuelle = a; },
+      error: () => { this.affectationActuelle = null; }
+    });
+
+    // Check if profile exists already
+    this.matchingService.getCandidateProfile(candidature.id).subscribe({
+      next: profile => {
+        this.profilIa = profile;
+        this.chargerRecommandations(candidature.id);
+      },
+      error: () => {
+        // Not analyzed yet — admin can click analyze
+      }
+    });
+  }
+
+  analyserCvIa(force = false): void {
+    if (!this.selection) return;
+
+    this.chargementIa = true;
+    this.erreurIa = null;
+    this.succesIa = null;
+
+    this.matchingService.analyzeCandidate(this.selection.id, force, this.selection.utilisateurId ?? undefined).subscribe({
+      next: profile => {
+        this.profilIa = profile;
+        this.chargementIa = false;
+        this.succesIa = 'Analyse du CV effectuée avec succès.';
+        this.chargerRecommandations(this.selection!.id);
+      },
+      error: err => {
+        this.chargementIa = false;
+        this.erreurIa = err.error?.error || 'Erreur lors de l\'analyse du CV.';
+      }
+    });
+  }
+
+  chargerRecommandations(stagiaireId: string): void {
+    this.matchingService.getRecommendations(stagiaireId).subscribe({
+      next: list => {
+        this.recommandations = list;
+      },
+      error: err => {
+        this.erreurIa = err.error?.error || 'Impossible de calculer les recommandations.';
+      }
+    });
+  }
+
+  proposerSujet(match: SubjectMatch): void {
+    if (!this.selection) return;
+
+    this.proposerEnCoursId = match.subjectId;
+    this.erreurIa = null;
+    this.succesIa = null;
+
+    this.subjectService.proposeSubject(
+      this.selection.id,
+      match.subjectId,
+      this.selection.utilisateurId ?? undefined,
+      this.selection.email,
+      `${this.selection.prenom} ${this.selection.nom}`
+    ).subscribe({
+      next: assignment => {
+        this.proposerEnCoursId = null;
+        this.affectationActuelle = assignment;
+        this.succesIa = `Le sujet "${match.subjectTitle}" a été proposé avec succès au stagiaire !`;
+      },
+      error: err => {
+        this.proposerEnCoursId = null;
+        this.erreurIa = err.error?.error || 'Erreur lors de la proposition du sujet.';
+      }
+    });
   }
 
   confirmerAcceptation(): void {
@@ -150,30 +386,61 @@ export class CandidaturesAdminComponent implements OnInit {
       return;
     }
 
+    this.erreursChamps = {};
+
     if (!this.encadrantId) {
-      this.erreursChamps = { encadrantId: ['Sélectionnez un encadrant.'] };
+      this.erreursChamps['encadrantId'] = ['Veuillez sélectionner un encadrant.'];
+    }
+
+    if (!this.selectedSubjectId) {
+      this.erreursChamps['selectedSubjectId'] = ['Veuillez sélectionner un sujet de stage pour le candidat.'];
+    }
+
+    if (Object.keys(this.erreursChamps).length > 0) {
       return;
     }
 
     const encadrant = this.encadrants.find(e => e.userId === Number(this.encadrantId));
+    const candidateName = `${this.selection.prenom} ${this.selection.nom}`;
+    const subjectId = this.selectedSubjectId!;
+    const candidateEmail = this.selection.email;
+    const encadrantNom = encadrant?.firstName ?? 'Encadrant';
 
     this.actionEnCours = true;
-    this.erreursChamps = {};
 
+    // 1. Accepter la candidature dans Stagiaire.Service
     this.candidatureService
       .accepter(this.selection.id, {
         departement: this.departement,
         encadrantId: Number(this.encadrantId),
-        encadrantNom: encadrant?.firstName ?? 'Encadrant',
+        encadrantNom: encadrantNom,
         dateDebut: this.dateDebut,
         dateFin: this.dateFin
       })
       .subscribe({
         next: () => {
-          this.actionEnCours = false;
-          this.succes = 'Candidature acceptée. La convention va être générée.';
-          this.fermer();
-          this.charger();
+          // 2. Proposer et affecter le sujet dans SubjectMatching.Service
+          this.subjectService.proposeSubject(
+            this.selection!.id,
+            subjectId,
+            this.selection!.utilisateurId ?? undefined,
+            candidateEmail,
+            candidateName,
+            encadrantNom
+          ).subscribe({
+            next: () => {
+              this.actionEnCours = false;
+              this.succes = `Candidature acceptée ! Le sujet de stage a été attribué et un email de confirmation a été envoyé à ${candidateName}.`;
+              this.fermer();
+              this.charger();
+            },
+            error: () => {
+              this.actionEnCours = false;
+              this.succes = 'Candidature acceptée. Attention: vérifiez l\'affectation du sujet.';
+              this.fermer();
+              this.charger();
+            }
+          });
         },
         error: (error: ApiError) => {
           this.actionEnCours = false;
@@ -239,7 +506,7 @@ export class CandidaturesAdminComponent implements OnInit {
     this.previewLoading = true;
     this.previewTitle = type === 'cv'
       ? `CV — ${candidature.prenom} ${candidature.nom}`
-      : `Formulaire de candidature — ${candidature.prenom} ${candidature.nom}`;
+      : `Demande de stage — ${candidature.prenom} ${candidature.nom}`;
     this.previewOpen = true;
 
     const call$ = type === 'cv'

@@ -1,83 +1,95 @@
-<div class="space-y-8 animate-fade-in">
+<div class="space-y-6 animate-fade-in">
+
+  <!-- Header Bar (theme toggle + user info) -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-extrabold text-gray-900 dark:text-gray-100">Tableau de bord</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Bienvenue, {{ currentUser?.firstName || 'Utilisateur' }}</p>
+    </div>
+    <button (click)="toggleTheme()"
+            class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 transition text-sm font-medium">
+      <span class="text-lg">{{ themeService.mode === 'dark' ? '☀️' : '🌙' }}</span>
+      <span>{{ themeService.mode === 'dark' ? 'Mode clair' : 'Mode sombre' }}</span>
+    </button>
+  </div>
+
   <!-- Welcome Banner -->
-  <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary-dark to-primary p-8 shadow-2xl">
+  <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary-dark to-primary p-8 shadow-2xl text-white">
     <div class="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
     <div class="absolute bottom-0 left-0 w-64 h-64 bg-accent/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4"></div>
     <div class="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-      <div class="text-white">
-        <div class="flex items-center space-x-4 mb-3">
-          <div class="w-14 h-14 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-            <span class="text-white font-bold text-2xl">S</span>
-          </div>
-          <div>
-            <h1 class="text-4xl font-bold mb-1">Gestion des Stagiaires</h1>
-            <p class="text-white/70 text-lg">Bienvenue, {{ currentUser?.firstName || 'Utilisateur' }} !</p>
-          </div>
+      <div class="flex items-center space-x-4">
+        <div class="w-14 h-14 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+          <span class="text-white font-bold text-2xl">S</span>
+        </div>
+        <div>
+          <h2 class="text-3xl font-bold mb-1">Gestion des Stagiaires — STB</h2>
+          <p class="text-white/70 text-lg">Plateforme de gestion des stages de la Société Tunisienne de Banque</p>
         </div>
       </div>
       <div class="flex items-center gap-3">
         <div class="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-xl text-white text-sm font-medium">
           {{ formatRole(currentUser?.role) }}
         </div>
+        <span *ngIf="unreadCount > 0" class="px-3 py-2 bg-amber-400 text-slate-950 rounded-xl text-sm font-bold">
+          {{ unreadCount }} notification{{ unreadCount > 1 ? 's' : '' }}
+        </span>
       </div>
     </div>
   </section>
 
+  <!-- Real-time notification toast -->
+  <div *ngIf="lastNotification" class="bg-blue-50 border border-blue-200 text-blue-800 dark:bg-blue-950/40 dark:border-blue-900 dark:text-blue-200 px-4 py-3 rounded-xl flex items-center justify-between animate-fade-in">
+    <div class="flex items-center gap-2">
+      <span class="text-lg">🔔</span>
+      <span class="text-sm font-medium">{{ lastNotification.message }}</span>
+    </div>
+    <button (click)="dismissNotification()" class="text-blue-400 hover:text-blue-700 transition">✕</button>
+  </div>
+
   <!-- Admin Stats Section -->
   <ng-container *ngIf="isAdmin() && stats">
     <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="bg-white rounded-2xl shadow-card border border-gray-100 p-5 hover:shadow-card-hover transition-shadow duration-300">
+      <div *ngFor="let card of dashboardCards" [ngClass]="cardStyle(card.color)"
+           class="rounded-2xl shadow-card border p-5 hover:shadow-card-hover transition-shadow duration-300">
         <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-            <span class="material-icons text-primary">people</span>
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" [ngClass]="iconBg(card.color)">
+            <span [ngClass]="iconText(card.color)"><span class="material-icons">{{ card.icon }}</span></span>
           </div>
           <div>
-            <p class="text-sm text-gray-500">Total Stagiaires</p>
-            <p class="text-2xl font-bold text-gray-800">{{ stats.stagiaires.totalStagiaires }}</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-2xl shadow-card border border-gray-100 p-5 hover:shadow-card-hover transition-shadow duration-300">
-        <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-xl bg-yellow-50 flex items-center justify-center">
-            <span class="material-icons text-yellow-500">pending_actions</span>
-          </div>
-          <div>
-            <p class="text-sm text-gray-500">Candidatures en attente</p>
-            <p class="text-2xl font-bold text-gray-800">{{ stats.stagiaires.pendingCandidatures }}</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-2xl shadow-card border border-gray-100 p-5 hover:shadow-card-hover transition-shadow duration-300">
-        <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center">
-            <span class="material-icons text-green-500">check_circle</span>
-          </div>
-          <div>
-            <p class="text-sm text-gray-500">Stagiaires acceptés</p>
-            <p class="text-2xl font-bold text-gray-800">{{ stats.stagiaires.acceptedStagiaires }}</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-2xl shadow-card border border-gray-100 p-5 hover:shadow-card-hover transition-shadow duration-300">
-        <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
-            <span class="material-icons text-blue-500">grading</span>
-          </div>
-          <div>
-            <p class="text-sm text-gray-500">Note moyenne</p>
-            <p class="text-2xl font-bold text-gray-800">{{ stats.evaluations.averageScore }}/20</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ card.label }}</p>
+            <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">{{ card.value }}{{ card.suffix || '' }}</p>
           </div>
         </div>
       </div>
     </section>
 
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+      <!-- Departement Bar Chart -->
+      <app-bar-chart
+        [data]="departementBarData"
+        [title]="'Répartition par département'"
+      ></app-bar-chart>
+
+      <!-- Type de Stage Donut Chart -->
+      <app-donut-chart
+        [data]="typeStageDonutData"
+        [title]="'Répartition par type de stage'"
+      ></app-donut-chart>
+    </div>
+
+    <!-- Pipeline Chart -->
+    <div class="mt-6">
+      <app-pipeline-chart
+        [data]="pipelineData"
+        [title]="'Pipeline des candidatures (entrants → sortants)'">
+      </app-pipeline-chart>
+    </div>
+
     <!-- Departement breakdown -->
-    <section *ngIf="stats.stagiaires.byDepartement.length > 0" class="bg-white rounded-2xl shadow-card border border-gray-100 p-6">
-      <h3 class="text-lg font-bold text-gray-800 mb-4">Répartition par département</h3>
+    <section *ngIf="stats.stagiaires.byDepartement.length > 0" class="bg-white rounded-2xl shadow-card border border-gray-100 p-6 mt-6">
+      <h3 class="text-lg font-bold text-gray-800 mb-4">Répartition par département (détail)</h3>
       <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <div *ngFor="let d of stats.stagiaires.byDepartement" class="flex items-center justify-between rounded-xl border border-gray-100 p-3">
           <span class="text-sm font-medium text-gray-700">{{ d.departement }}</span>
@@ -102,7 +114,7 @@
     </section>
   </ng-container>
 
-  <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <section class="grid grid-cols-1 lg:grid-cols-2 gap-6" *ngIf="!isAdmin()">
     <!-- User Info Card -->
     <div class="bg-white rounded-2xl shadow-card border border-gray-100 p-6 hover:shadow-card-hover transition-shadow duration-300">
       <div class="flex items-center gap-4 mb-5">
@@ -130,9 +142,8 @@
       <p class="text-sm text-gray-500 mb-6">Accédez rapidement aux modules de gestion.</p>
 
       <div class="space-y-3">
-        <!-- Stagiaire actions -->
         <ng-container *ngIf="currentUser?.role === 'LEARNER'">
-          <a routerLink="/dashboard/ma-candidature" class="flex items-center justify-between rounded-xl border border-gray-100 p-4 hover:bg-primary/5 hover:border-primary/20 transition-all group">
+          <a routerLink="/espace/ma-candidature" class="flex items-center justify-between rounded-xl border border-gray-100 p-4 hover:bg-primary/5 hover:border-primary/20 transition-all group">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
                 <span class="material-icons text-primary group-hover:text-white">assignment</span>
@@ -141,7 +152,7 @@
             </div>
             <span class="material-icons text-gray-400 group-hover:text-primary transition-all">chevron_right</span>
           </a>
-          <a routerLink="/dashboard/ma-convention" class="flex items-center justify-between rounded-xl border border-gray-100 p-4 hover:bg-primary/5 hover:border-primary/20 transition-all group">
+          <a routerLink="/espace/ma-convention" class="flex items-center justify-between rounded-xl border border-gray-100 p-4 hover:bg-primary/5 hover:border-primary/20 transition-all group">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent group-hover:text-white transition-all">
                 <span class="material-icons text-accent group-hover:text-white">description</span>
@@ -150,7 +161,7 @@
             </div>
             <span class="material-icons text-gray-400 group-hover:text-primary transition-all">chevron_right</span>
           </a>
-          <a routerLink="/dashboard/mon-journal" class="flex items-center justify-between rounded-xl border border-gray-100 p-4 hover:bg-primary/5 hover:border-primary/20 transition-all group">
+          <a routerLink="/espace/mon-journal" class="flex items-center justify-between rounded-xl border border-gray-100 p-4 hover:bg-primary/5 hover:border-primary/20 transition-all group">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-all">
                 <span class="material-icons text-blue-500 group-hover:text-white">menu_book</span>
@@ -159,7 +170,7 @@
             </div>
             <span class="material-icons text-gray-400 group-hover:text-primary transition-all">chevron_right</span>
           </a>
-          <a routerLink="/dashboard/mes-evaluations" class="flex items-center justify-between rounded-xl border border-gray-100 p-4 hover:bg-primary/5 hover:border-primary/20 transition-all group">
+          <a routerLink="/espace/mes-evaluations" class="flex items-center justify-between rounded-xl border border-gray-100 p-4 hover:bg-primary/5 hover:border-primary/20 transition-all group">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-all">
                 <span class="material-icons text-green-500 group-hover:text-white">grading</span>
@@ -170,40 +181,8 @@
           </a>
         </ng-container>
 
-        <!-- Admin actions -->
-        <ng-container *ngIf="currentUser?.role === 'ADMIN'">
-          <a routerLink="/dashboard/candidatures" class="flex items-center justify-between rounded-xl border border-gray-100 p-4 hover:bg-primary/5 hover:border-primary/20 transition-all group">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
-                <span class="material-icons text-primary group-hover:text-white">how_to_reg</span>
-              </div>
-              <span class="font-semibold text-gray-800">Candidatures</span>
-            </div>
-            <span class="material-icons text-gray-400 group-hover:text-primary transition-all">chevron_right</span>
-          </a>
-          <a routerLink="/dashboard/conventions" class="flex items-center justify-between rounded-xl border border-gray-100 p-4 hover:bg-primary/5 hover:border-primary/20 transition-all group">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent group-hover:text-white transition-all">
-                <span class="material-icons text-accent group-hover:text-white">description</span>
-              </div>
-              <span class="font-semibold text-gray-800">Conventions</span>
-            </div>
-            <span class="material-icons text-gray-400 group-hover:text-primary transition-all">chevron_right</span>
-          </a>
-          <a routerLink="/dashboard/stagiaires" class="flex items-center justify-between rounded-xl border border-gray-100 p-4 hover:bg-primary/5 hover:border-primary/20 transition-all group">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-all">
-                <span class="material-icons text-blue-500 group-hover:text-white">people</span>
-              </div>
-              <span class="font-semibold text-gray-800">Stagiaires</span>
-            </div>
-            <span class="material-icons text-gray-400 group-hover:text-primary transition-all">chevron_right</span>
-          </a>
-        </ng-container>
-
-        <!-- Encadrant actions -->
         <ng-container *ngIf="currentUser?.role === 'TRAINER'">
-          <a routerLink="/dashboard/mes-stagiaires" class="flex items-center justify-between rounded-xl border border-gray-100 p-4 hover:bg-primary/5 hover:border-primary/20 transition-all group">
+          <a routerLink="/espace/mes-stagiaires" class="flex items-center justify-between rounded-xl border border-gray-100 p-4 hover:bg-primary/5 hover:border-primary/20 transition-all group">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
                 <span class="material-icons text-primary group-hover:text-white">supervisor_account</span>
@@ -212,7 +191,7 @@
             </div>
             <span class="material-icons text-gray-400 group-hover:text-primary transition-all">chevron_right</span>
           </a>
-          <a routerLink="/dashboard/journaux" class="flex items-center justify-between rounded-xl border border-gray-100 p-4 hover:bg-primary/5 hover:border-primary/20 transition-all group">
+          <a routerLink="/espace/journaux" class="flex items-center justify-between rounded-xl border border-gray-100 p-4 hover:bg-primary/5 hover:border-primary/20 transition-all group">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent group-hover:text-white transition-all">
                 <span class="material-icons text-accent group-hover:text-white">rate_review</span>
@@ -221,7 +200,7 @@
             </div>
             <span class="material-icons text-gray-400 group-hover:text-primary transition-all">chevron_right</span>
           </a>
-          <a routerLink="/dashboard/evaluations" class="flex items-center justify-between rounded-xl border border-gray-100 p-4 hover:bg-primary/5 hover:border-primary/20 transition-all group">
+          <a routerLink="/espace/evaluations" class="flex items-center justify-between rounded-xl border border-gray-100 p-4 hover:bg-primary/5 hover:border-primary/20 transition-all group">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-all">
                 <span class="material-icons text-green-500 group-hover:text-white">grading</span>

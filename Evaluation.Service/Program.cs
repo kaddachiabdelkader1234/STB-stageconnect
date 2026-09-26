@@ -55,6 +55,14 @@ builder.Services.AddMassTransit(x =>
             h.Password(builder.Configuration["RabbitMQ:Password"] ?? "guest");
         });
 
+        // Retry transient failures with exponential back-off; after the limit the message lands in
+        // the transport dead-letter queue "<queue>_error" rather than being dropped.
+        cfg.UseMessageRetry(r => r.Exponential(
+            retryLimit: 5,
+            minInterval: TimeSpan.FromSeconds(1),
+            maxInterval: TimeSpan.FromSeconds(30),
+            intervalDelta: TimeSpan.FromSeconds(5)));
+
         // Explicit queue name, and deliberately NOT cfg.ConfigureEndpoints(context).
         //
         // The default endpoint name is derived from the consumer's type name, and Convention.Service

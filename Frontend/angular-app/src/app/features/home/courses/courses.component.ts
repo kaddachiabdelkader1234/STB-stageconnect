@@ -1,12 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { DataService } from '../../../core/services/data.service';
 import { CourseDetail } from '../../../core/models/course.model';
 
 @Component({
   selector: 'app-courses',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './courses.component.html',
   styleUrl: './courses.component.scss'
 })

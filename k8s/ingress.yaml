@@ -1,20 +1,65 @@
+# Ingress — single external entry point over HTTPS.
+#
+# Routing:
+#   /api/**  → api-gateway :18080   (all REST traffic)
+#   /hub/**  → api-gateway :18080   (SignalR WebSocket upgrade)
+#   /**      → frontend    :80      (the Angular SPA)
+#
+# TLS: the secret below must exist before the Ingress reports a valid certificate.
+# With cert-manager, uncomment the cluster-issuer annotation and it will be created automatically.
+# Without it, create it manually:
+#   kubectl create secret tls gestion-stagiaires-tls -n gestion-stagiaires-stb \
+#     --cert=path/to/tls.crt --key=path/to/tls.key
+#
+# NOTE: the previous revision carried `nginx.ingress.kubernetes.io/rewrite-target: /`, which
+# rewrote every path to `/` and would have broken all API routing. It has been removed.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: gestion-stagiaires-ingress
   namespace: gestion-stagiaires-stb
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    # WebSocket connections (SignalR) are long-lived — the default 60s timeout drops them.
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-body-size: "15m"
+    # Uncomment when cert-manager is installed in the cluster:
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: nginx
+  tls:
+  - hosts:
+    - stb.local
+    secretName: gestion-stagiaires-tls
   rules:
   - host: stb.local
     http:
       paths:
-      - path: /
+      - path: /api
         pathType: Prefix
         backend:
           service:
             name: api-gateway
             port:
-              number: 8080
+              number: 18080
+      - path: /hub
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 18080
+      - path: /actuator
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 18080
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 80

@@ -36,6 +36,6 @@ export class NotificationApiService {
   }
 
   markAsRead(id: string): Observable<ApiNotification> {
-    return this.http.put<ApiNotification>(`${this.baseUrl}/${id}`, { lu: true });
+    return this.http.patch<ApiNotification>(`${this.baseUrl}/${id}/read`, {});
   }
 }

@@ -63,6 +63,16 @@ export class MonEvaluationComponent implements OnInit {
     );
   }
 
+  /** Evaluations validated by the administration — the only ones the learner may see. */
+  get evaluationsValidees(): Evaluation[] {
+    return this.evaluations.filter(e => e.statut === 'Validee');
+  }
+
+  /** True when the encadrant has graded but the administration has not validated yet. */
+  get enAttenteValidation(): boolean {
+    return this.evaluations.some(e => e.statut !== 'Validee') && this.evaluationsValidees.length === 0;
+  }
+
   charger(): void {
     this.chargement = true;
     this.erreur = null;
@@ -120,7 +130,7 @@ export class MonEvaluationComponent implements OnInit {
 
   /** Computes the average note from all validated evaluations. */
   get noteMoyenne(): number | null {
-    const validees = this.evaluations.filter(e => e.statut === 'Validee');
+    const validees = this.evaluationsValidees;
     if (validees.length === 0) {
       return null;
     }

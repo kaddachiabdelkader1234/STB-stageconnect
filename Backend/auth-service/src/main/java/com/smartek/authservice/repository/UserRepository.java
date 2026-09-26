@@ -16,10 +16,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     Optional<User> findByEmail(String email);
     
+    Optional<User> findByResetPasswordToken(String resetPasswordToken);
+    
     Boolean existsByEmail(String email);
     
     List<User> findByRole(RoleType role);
-    
+
+    /** All accounts, newest first — backs the admin's accounts-management screen. */
+    List<User> findAllByOrderByUserIdDesc();
+
     Long countByRole(RoleType role);
     
     Boolean existsByRole(RoleType role);

@@ -1,0 +1,17 @@
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+  <div *ngIf="title" class="text-lg font-bold text-gray-800 mb-4">{{ title }}</div>
+  <div *ngIf="!hasData" class="text-gray-400 text-sm py-8 text-center">Aucune donnée disponible</div>
+
+  <div *ngIf="hasData" class="flex items-end gap-3 h-48">
+    <div *ngFor="let item of data; let i = index" class="flex-1 flex flex-col items-center gap-2 group">
+      <span class="text-xs font-semibold text-gray-600 opacity-0 group-hover:opacity-100 transition">
+        {{ item.value }}
+      </span>
+      <div class="w-full rounded-t-md transition-all duration-500 hover:opacity-80"
+           [style.height.%]="(item.value / normalizedMax) * 100"
+           [style.background-color]="colors[i]">
+      </div>
+      <span class="text-xs text-gray-500 text-center leading-tight truncate w-full">{{ item.label }}</span>
+    </div>
+  </div>
+</div>

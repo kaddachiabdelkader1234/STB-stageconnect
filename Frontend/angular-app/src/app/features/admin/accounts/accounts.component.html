@@ -1,0 +1,182 @@
+<div class="max-w-6xl mx-auto space-y-6 animate-fade-in">
+  <!-- Header -->
+  <div class="bg-white rounded-2xl shadow-card border border-gray-100 p-6">
+    <div class="flex items-center justify-between flex-wrap gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+          <span class="material-icons text-primary text-2xl">manage_accounts</span>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Comptes</h1>
+          <p class="text-sm text-gray-500">Voir et gérer tous les comptes de la plateforme</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4 text-sm">
+        <div class="text-center">
+          <div class="text-xl font-bold text-purple-600">{{ counts.admin }}</div>
+          <div class="text-xs text-gray-500">Admins</div>
+        </div>
+        <div class="w-px h-8 bg-gray-200"></div>
+        <div class="text-center">
+          <div class="text-xl font-bold text-blue-600">{{ counts.trainer }}</div>
+          <div class="text-xs text-gray-500">Encadrants</div>
+        </div>
+        <div class="w-px h-8 bg-gray-200"></div>
+        <div class="text-center">
+          <div class="text-xl font-bold text-green-600">{{ counts.learner }}</div>
+          <div class="text-xs text-gray-500">Stagiaires</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="successMessage" class="p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm flex items-center gap-2">
+    <span class="material-icons text-green-600">check_circle</span>
+    {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex items-center gap-2">
+    <span class="material-icons text-red-500">error</span>
+    {{ errorMessage }}
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-white rounded-2xl shadow-card border border-gray-100 p-4">
+    <div class="flex flex-wrap items-center gap-3">
+      <div class="flex-1 min-w-[220px] relative">
+        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </span>
+        <input type="text" [(ngModel)]="recherche" placeholder="Rechercher par nom ou email…"
+               class="w-full pl-12 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm">
+      </div>
+      <div class="flex items-center gap-1 bg-gray-50 rounded-xl p-1">
+        <button type="button" (click)="filtreRole = ''"
+                [class]="filtreRole === '' ? 'px-4 py-2 rounded-lg text-sm font-medium bg-white shadow text-primary' : 'px-4 py-2 rounded-lg text-sm text-gray-500 hover:text-gray-700'">
+          Tous
+        </button>
+        <button type="button" (click)="filtreRole = 'ADMIN'"
+                [class]="filtreRole === 'ADMIN' ? 'px-4 py-2 rounded-lg text-sm font-medium bg-white shadow text-purple-600' : 'px-4 py-2 rounded-lg text-sm text-gray-500 hover:text-gray-700'">
+          Admins
+        </button>
+        <button type="button" (click)="filtreRole = 'TRAINER'"
+                [class]="filtreRole === 'TRAINER' ? 'px-4 py-2 rounded-lg text-sm font-medium bg-white shadow text-blue-600' : 'px-4 py-2 rounded-lg text-sm text-gray-500 hover:text-gray-700'">
+          Encadrants
+        </button>
+        <button type="button" (click)="filtreRole = 'LEARNER'"
+                [class]="filtreRole === 'LEARNER' ? 'px-4 py-2 rounded-lg text-sm font-medium bg-white shadow text-green-600' : 'px-4 py-2 rounded-lg text-sm text-gray-500 hover:text-gray-700'">
+          Stagiaires
+        </button>
+      </div>
+      <button type="button" (click)="loadAccounts()"
+              class="p-2.5 rounded-xl border border-gray-200 text-gray-500 hover:text-primary hover:border-primary/40 transition-all" title="Rafraîchir">
+        <span class="material-icons text-xl">refresh</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="p-12 text-center">
+      <svg class="animate-spin h-8 w-8 mx-auto text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <p class="text-sm text-gray-500 mt-3">Chargement des comptes…</p>
+    </div>
+
+    <!-- Empty -->
+    <div *ngIf="!isLoading && filteredAccounts.length === 0" class="p-12 text-center">
+      <span class="material-icons text-gray-300 text-5xl">group_off</span>
+      <p class="text-gray-500 mt-3">Aucun compte trouvé.</p>
+    </div>
+
+    <!-- Rows -->
+    <div *ngIf="!isLoading && filteredAccounts.length > 0" class="divide-y divide-gray-100">
+      <div *ngFor="let account of filteredAccounts" class="p-4 hover:bg-gray-50/60 transition-colors">
+        <div class="flex items-center gap-4 flex-wrap sm:flex-nowrap">
+          <!-- Avatar + identity -->
+          <div class="flex items-center gap-3 flex-1 min-w-[220px]">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm"
+                 [class]="avatarClass(account.role)">
+              {{ initials(account) }}
+            </div>
+            <div class="min-w-0">
+              <p class="font-semibold text-gray-900 truncate">{{ fullName(account) }}</p>
+              <p class="text-xs text-gray-500 truncate">{{ account.email }}</p>
+            </div>
+          </div>
+
+          <!-- Role -->
+          <div class="w-28">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border"
+                  [class]="roleBadgeClass(account.role)">
+              {{ roleLabel(account.role) }}
+            </span>
+          </div>
+
+          <!-- Phone -->
+          <div class="w-36 text-sm text-gray-600 hidden md:block">
+            <span class="inline-flex items-center gap-1.5">
+              <span class="material-icons text-sm text-gray-400">call</span>
+              {{ account.phone || '—' }}
+            </span>
+          </div>
+
+          <!-- Created -->
+          <div class="w-32 text-xs text-gray-500 hidden lg:block">
+            {{ account.createdAt ? (account.createdAt | date:'dd/MM/yyyy') : '—' }}
+          </div>
+
+          <!-- Resend credentials (encadrants only — their password travels by email only) -->
+          <!-- Delete -->
+          <div class="w-48 flex justify-end items-center gap-1">
+            <ng-container *ngIf="canResend(account) && pendingResendId !== account.userId && pendingDeleteId !== account.userId">
+              <button type="button" (click)="askResend(account)"
+                      class="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                      title="Renvoyer les identifiants par email">
+                <span class="material-icons text-xl">forward_to_inbox</span>
+              </button>
+            </ng-container>
+            <ng-container *ngIf="pendingResendId === account.userId">
+              <div class="flex items-center gap-1">
+                <span class="text-xs text-blue-600 font-medium mr-1 hidden sm:inline">Renvoyer ? L'ancien mot de passe sera invalide.</span>
+                <button type="button" (click)="confirmResend(account)" [disabled]="isResending"
+                        class="px-2.5 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 disabled:opacity-50">
+                  Oui
+                </button>
+                <button type="button" (click)="cancelResend()"
+                        class="px-2.5 py-1.5 rounded-lg bg-gray-100 text-gray-600 text-xs font-medium hover:bg-gray-200">
+                  Non
+                </button>
+              </div>
+            </ng-container>
+            <ng-container *ngIf="pendingDeleteId !== account.userId; else confirmBox">
+              <button type="button" (click)="askDelete(account)"
+                      class="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      [title]="account.userId === currentUserId ? 'Supprimer ce compte' : 'Supprimer ce compte'">
+                <span class="material-icons text-xl">delete_outline</span>
+              </button>
+            </ng-container>
+            <ng-template #confirmBox>
+              <div class="flex items-center gap-1">
+                <span class="text-xs text-red-600 font-medium mr-1 hidden sm:inline">Supprimer ?</span>
+                <button type="button" (click)="confirmDelete(account.userId)" [disabled]="isDeleting"
+                        class="px-2.5 py-1.5 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 disabled:opacity-50">
+                  Oui
+                </button>
+                <button type="button" (click)="cancelDelete()"
+                        class="px-2.5 py-1.5 rounded-lg bg-gray-100 text-gray-600 text-xs font-medium hover:bg-gray-200">
+                  Non
+                </button>
+              </div>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

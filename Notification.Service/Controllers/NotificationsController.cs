@@ -7,6 +7,7 @@ using Smartek.Common.Pagination;
 using Smartek.Common.Security;
 using Notification.Service.Data;
 using Notification.Service.DTOs;
+using Notification.Service.Models;
 using NotificationEntity = Notification.Service.Models.Notification;
 
 namespace Notification.Service.Controllers;
@@ -48,12 +49,7 @@ public class NotificationsController(AppDbContext dbContext) : ControllerBase
         [FromQuery] NotificationQueryParameters query,
         CancellationToken cancellationToken)
     {
-        var source = ApplyReadScope(dbContext.Notifications.AsNoTracking());
-
-        if (query.DestinataireId is { } destinataireId)
-        {
-            source = source.Where(x => x.DestinataireId == destinataireId);
-        }
+        var source = ApplyReadScope(dbContext.Notifications.AsNoTracking(), query.DestinataireId);
 
         if (query.Lu is { } lu)
         {
@@ -120,6 +116,29 @@ public class NotificationsController(AppDbContext dbContext) : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = entity.Id }, ToReadDto(entity));
     }
 
+    /// <summary>
+    /// Marks a notification as read. Accessible by the recipient (or admin).
+    /// </summary>
+    [HttpPatch("{id:guid}/read")]
+    [HttpPut("{id:guid}/read")]
+    [ProducesResponseType(typeof(NotificationReadDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<NotificationReadDto>> MarkAsRead(Guid id, CancellationToken cancellationToken)
+    {
+        var entity = await ApplyReadScope(dbContext.Notifications)
+            .SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (entity is null)
+        {
+            throw NotFoundException.For("La notification", id);
+        }
+
+        entity.Lu = true;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return Ok(ToReadDto(entity));
+    }
+
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "ADMIN")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -174,14 +193,18 @@ public class NotificationsController(AppDbContext dbContext) : ControllerBase
     /// An admin sees everything; a learner or trainer sees only notifications addressed to them.
     /// A caller with no userId claim sees nothing — the safe failure direction.
     /// </remarks>
-    private IQueryable<NotificationEntity> ApplyReadScope(IQueryable<NotificationEntity> source)
+    private IQueryable<NotificationEntity> ApplyReadScope(IQueryable<NotificationEntity> source, long? explicitDestinataireId = null)
     {
+        var callerId = User.GetUserId();
+
         if (User.IsAdmin())
         {
-            return source;
+            if (explicitDestinataireId.HasValue)
+            {
+                return source.Where(x => x.DestinataireId == explicitDestinataireId.Value);
+            }
+            return source.Where(x => x.DestinataireRole == DestinataireRole.AdminRH || (callerId != null && x.DestinataireId == callerId));
         }
-
-        var callerId = User.GetUserId();
 
         if (callerId is null)
         {

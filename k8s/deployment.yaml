@@ -1,9 +1,19 @@
+# Kubernetes Deployments — Gestion des Stagiaires STB
+#
+# Replica sizing follows the MODERNIZATION_PROMPT Part C guidance: 2–3 replicas for the gateway
+# and the busiest .NET services, 1 for the stateless registries. HorizontalPodAutoscalers live in
+# hpa.yaml (requires metrics-server in the cluster).
+#
+# NOTE: PostgreSQL / MySQL / RabbitMQ are expected to be provided by the cluster or a managed
+# service and are therefore NOT declared here — only the application services are.
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: eureka-server
   namespace: gestion-stagiaires-stb
 spec:
+  # Service registry — a single instance keeps the registry consistent; it is not in the request path.
   replicas: 1
   selector:
     matchLabels:
@@ -21,6 +31,63 @@ spec:
         env:
         - name: SPRING_PROFILES_ACTIVE
           value: "production"
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8761
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8761
+          initialDelaySeconds: 60
+          periodSeconds: 20
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: config-server
+  namespace: gestion-stagiaires-stb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: config-server
+  template:
+    metadata:
+      labels:
+        app: config-server
+    spec:
+      containers:
+      - name: config-server
+        image: ghcr.io/kaddachiabdelkader1234/gestion-des-stagiere/config-server:latest
+        ports:
+        - containerPort: 8888
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: EUREKA_DEFAULT_ZONE
+          value: "http://eureka-server:8761/eureka/"
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8888
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8888
+          initialDelaySeconds: 60
+          periodSeconds: 20
         resources:
           requests:
             memory: "256Mi"
@@ -35,7 +102,7 @@ metadata:
   name: auth-service
   namespace: gestion-stagiaires-stb
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: auth-service
@@ -68,6 +135,18 @@ spec:
             secretKeyRef:
               name: gestion-stagiaires-secrets
               key: JWT_SECRET
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8081
+          initialDelaySeconds: 40
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8081
+          initialDelaySeconds: 90
+          periodSeconds: 20
         resources:
           requests:
             memory: "256Mi"
@@ -82,7 +161,8 @@ metadata:
   name: api-gateway
   namespace: gestion-stagiaires-stb
 spec:
-  replicas: 1
+  # Busiest service — every request passes through it, and it also hosts the /hub/** WebSocket route.
+  replicas: 3
   selector:
     matchLabels:
       app: api-gateway
@@ -95,14 +175,343 @@ spec:
       - name: api-gateway
         image: ghcr.io/kaddachiabdelkader1234/gestion-des-stagiere/api-gateway:latest
         ports:
-        - containerPort: 8080
+        # The gateway binds 18080 (Backend/api-gateway/.../application.yml) — NOT the Spring default 8080.
+        - containerPort: 18080
         env:
         - name: EUREKA_DEFAULT_ZONE
           value: "http://eureka-server:8761/eureka/"
+        - name: CONFIG_SERVER_URL
+          value: "http://config-server:8888"
+        - name: GATEWAY_ALLOWED_ORIGINS
+          value: "https://stb.local"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: gestion-stagiaires-secrets
+              key: JWT_SECRET
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 18080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 18080
+          initialDelaySeconds: 60
+          periodSeconds: 20
         resources:
           requests:
             memory: "256Mi"
-            cpu: "100m"
+            cpu: "150m"
           limits:
-            memory: "512Mi"
+            memory: "768Mi"
+            cpu: "1000m"
+---
+# ========== .NET SERVICES ==========
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stagiaire-service
+  namespace: gestion-stagiaires-stb
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: stagiaire-service
+  template:
+    metadata:
+      labels:
+        app: stagiaire-service
+    spec:
+      containers:
+      - name: stagiaire-service
+        image: ghcr.io/kaddachiabdelkader1234/gestion-des-stagiere/stagiaire-service:latest
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: gestion-stagiaires-config
+        env:
+        - name: ConnectionStrings__DefaultConnection
+          value: "Host=postgres;Port=5432;Database=stagiaire_service_db;Username=postgres;Password=postgres;Maximum Pool Size=20;Minimum Pool Size=5;Connection Idle Lifetime=300"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: gestion-stagiaires-secrets
+              key: JWT_SECRET
+        - name: Storage__RootPath
+          value: "/app/storage"
+        volumeMounts:
+        - name: stagiaire-storage
+          mountPath: /app/storage
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 45
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 20
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "150m"
+          limits:
+            memory: "768Mi"
+            cpu: "1000m"
+      volumes:
+      - name: stagiaire-storage
+        persistentVolumeClaim:
+          claimName: stagiaire-storage-pvc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: convention-service
+  namespace: gestion-stagiaires-stb
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: convention-service
+  template:
+    metadata:
+      labels:
+        app: convention-service
+    spec:
+      containers:
+      - name: convention-service
+        image: ghcr.io/kaddachiabdelkader1234/gestion-des-stagiere/convention-service:latest
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: gestion-stagiaires-config
+        env:
+        - name: ConnectionStrings__DefaultConnection
+          value: "Host=postgres;Port=5432;Database=convention_service_db;Username=postgres;Password=postgres;Maximum Pool Size=20;Minimum Pool Size=5;Connection Idle Lifetime=300"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: gestion-stagiaires-secrets
+              key: JWT_SECRET
+        - name: Storage__RootPath
+          value: "/app/storage"
+        volumeMounts:
+        - name: convention-storage
+          mountPath: /app/storage
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 45
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 20
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "150m"
+          limits:
+            memory: "768Mi"
+            cpu: "1000m"
+      volumes:
+      - name: convention-storage
+        persistentVolumeClaim:
+          claimName: convention-storage-pvc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: evaluation-service
+  namespace: gestion-stagiaires-stb
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: evaluation-service
+  template:
+    metadata:
+      labels:
+        app: evaluation-service
+    spec:
+      containers:
+      - name: evaluation-service
+        image: ghcr.io/kaddachiabdelkader1234/gestion-des-stagiere/evaluation-service:latest
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: gestion-stagiaires-config
+        env:
+        - name: ConnectionStrings__DefaultConnection
+          value: "Host=postgres;Port=5432;Database=evaluation_service_db;Username=postgres;Password=postgres;Maximum Pool Size=20;Minimum Pool Size=5;Connection Idle Lifetime=300"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: gestion-stagiaires-secrets
+              key: JWT_SECRET
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 45
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 20
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "150m"
+          limits:
+            memory: "768Mi"
+            cpu: "1000m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: gestion-stagiaires-stb
+spec:
+  # Also hosts the SignalR hub — needs ≥2 replicas, but note that group membership is per-pod:
+  # see k8s/README.md for the Redis backplane caveat before scaling this beyond 2.
+  replicas: 2
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+      - name: notification-service
+        image: ghcr.io/kaddachiabdelkader1234/gestion-des-stagiere/notification-service:latest
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: gestion-stagiaires-config
+        env:
+        - name: ConnectionStrings__DefaultConnection
+          value: "Host=postgres;Port=5432;Database=notification_service_db;Username=postgres;Password=postgres;Maximum Pool Size=20;Minimum Pool Size=5;Connection Idle Lifetime=300"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: gestion-stagiaires-secrets
+              key: JWT_SECRET
+        - name: Smtp__Host
+          valueFrom:
+            secretKeyRef:
+              name: gestion-stagiaires-secrets
+              key: SMTP_HOST
+        - name: Smtp__Username
+          valueFrom:
+            secretKeyRef:
+              name: gestion-stagiaires-secrets
+              key: SMTP_USERNAME
+        - name: Smtp__Password
+          valueFrom:
+            secretKeyRef:
+              name: gestion-stagiaires-secrets
+              key: SMTP_PASSWORD
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 45
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 20
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "150m"
+          limits:
+            memory: "768Mi"
+            cpu: "1000m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: gestion-stagiaires-stb
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: ghcr.io/kaddachiabdelkader1234/gestion-des-stagiere/frontend:latest
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 20
+          periodSeconds: 20
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
             cpu: "500m"
+---
+# ========== STORAGE ==========
+# These services run with replicas > 1, so the volumes MUST be ReadWriteMany: each replica mounts
+# the same files (a CV uploaded to one pod must be downloadable from another). This requires a
+# storage class that supports RWX (NFS, CephFS, EFS, Azure Files…). On a single-node dev cluster
+# without an RWX class, scale these two deployments back to replicas: 1 — see k8s/README.md.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: stagiaire-storage-pvc
+  namespace: gestion-stagiaires-stb
+spec:
+  accessModes: ["ReadWriteMany"]
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: convention-storage-pvc
+  namespace: gestion-stagiaires-stb
+spec:
+  accessModes: ["ReadWriteMany"]
+  resources:
+    requests:
+      storage: 2Gi

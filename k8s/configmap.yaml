@@ -4,8 +4,22 @@ metadata:
   name: gestion-stagiaires-config
   namespace: gestion-stagiaires-stb
 data:
+  # ---- Common ----
   ASPNETCORE_ENVIRONMENT: "Production"
+
+  # ---- Discovery ----
+  # Java services use the Spring-style key; .NET services use the double-underscore form.
   EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: "http://eureka-server:8761/eureka/"
+  Eureka__Client__ServiceUrl: "http://eureka-server:8761/eureka/"
+
+  # ---- RabbitMQ ----
   RabbitMQ__Host: "rabbitmq"
   RabbitMQ__Username: "guest"
   RabbitMQ__Password: "guest"
+
+  # ---- SMTP (non-secret parts; host/credentials come from the Secret) ----
+  Smtp__Port: "587"
+  Smtp__EnableSsl: "true"
+  Smtp__FromAddress: "noreply@stb.tn"
+  Smtp__FromName: "STB Gestion des Stagiaires"
+  Smtp__NoOp: "false"

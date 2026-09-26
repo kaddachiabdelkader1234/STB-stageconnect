@@ -94,10 +94,18 @@ services:
       # Admin seed: created on first boot if no ADMIN exists yet. Safe to restart — no duplicates.
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@stb.tn}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin123!}
+      # Publishes EncadrantCreated when an admin creates an encadrant — notification-service
+      # consumes it and emails the welcome message with the credentials.
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
     depends_on:
       eureka-server:
         condition: service_healthy
       mysql:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - smartek-network
@@ -264,14 +272,14 @@ services:
       RabbitMQ__Username: guest
       RabbitMQ__Password: guest
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required - copy .env.example to .env}
-      # SMTP — reads from .env. Defaults point at Mailhog for local dev;
-      # to use real Gmail, set SMTP_HOST / SMTP_USERNAME / SMTP_PASSWORD in .env
-      # and restart the notification-service container.
-      Smtp__Host: mailhog
-      Smtp__Port: 1025
-      Smtp__Username: ""
-      Smtp__Password: ""
-      Smtp__EnableSsl: "false"
+      # SMTP — reads from .env, with Mailhog defaults for local dev.
+      # To use real Gmail, set SMTP_HOST / SMTP_PORT / SMTP_USERNAME / SMTP_PASSWORD /
+      # SMTP_USE_TLS in .env and restart the notification-service container — no file edit needed.
+      Smtp__Host: ${SMTP_HOST:-mailhog}
+      Smtp__Port: ${SMTP_PORT:-1025}
+      Smtp__Username: ${SMTP_USERNAME:-}
+      Smtp__Password: ${SMTP_PASSWORD:-}
+      Smtp__EnableSsl: ${SMTP_USE_TLS:-false}
       Smtp__FromAddress: ${SMTP_FROM_ADDRESS:-noreply@stb.tn}
       Smtp__FromName: ${SMTP_FROM_NAME:-STB Gestion des Stagiaires}
       Smtp__NoOp: "false"
@@ -289,6 +297,92 @@ services:
       rabbitmq:
         condition: service_healthy
       mailhog:
+        condition: service_started
+    networks:
+      - smartek-network
+
+  subject-matching-service:
+    build:
+      context: .
+      dockerfile: SubjectMatching.Service/Dockerfile
+    container_name: smartek-subject-matching
+    ports:
+      - "5074:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Eureka__Client__ServiceUrl: http://eureka-server:8761/eureka/
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=subject_matching_db;Username=postgres;Password=postgres;Maximum Pool Size=20;Minimum Pool Size=5;Connection Idle Lifetime=300
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required - copy .env.example to .env}
+      SHARP_API_KEY: ${SHARP_API_KEY:-}
+      AI_MATCHING_PROVIDER: ${AI_MATCHING_PROVIDER:-sharpapi}
+      Storage__RootPath: /app/storage
+    volumes:
+      - stagiaire-storage:/app/storage/stagiaires:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health/live || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - smartek-network
+
+  # ========== ANGULAR FRONTEND ==========
+  frontend:
+    build:
+      context: ./Frontend/angular-app
+      dockerfile: Dockerfile
+    container_name: smartek-frontend
+    ports:
+      - "4200:80"
+    healthcheck:
+      # 127.0.0.1, not localhost: nginx listens on IPv4 only, but localhost resolves to ::1
+      # inside the container, so the probe would get "Connection refused".
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      api-gateway:
+        condition: service_started
+    networks:
+      - smartek-network
+
+  # ========== HTTPS TERMINATION (opt-in) ==========
+  # Not started by a plain `docker compose up` — the "tls" profile must be requested explicitly:
+  #   bash scripts/generate-dev-certs.sh
+  #   docker compose --profile tls up -d
+  # Terminates TLS on 443, redirects 80 → 443, and proxies /api/** and /hub/** (SignalR) to the
+  # gateway and everything else to the SPA. See nginx/tls.conf for the matching frontend apiUrl.
+  tls-proxy:
+    image: nginx:alpine
+    container_name: smartek-tls
+    profiles: ["tls"]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/tls.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- --no-check-certificate https://localhost/health >/dev/null || wget -qO- http://localhost/ >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      api-gateway:
+        condition: service_started
+      frontend:
         condition: service_started
     networks:
       - smartek-network

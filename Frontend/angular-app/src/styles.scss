@@ -445,3 +445,113 @@ select {
     transform: translateX(200%) skewX(-12deg);
   }
 }
+
+/* ==========================================================================
+   DARK MODE — surface system
+   ==========================================================================
+   Components hardcode light classes (bg-white, text-gray-900, border-gray-100…)
+   in dozens of templates. Rather than touching every line, these overrides
+   repaint those same utility classes whenever `.dark` is on <html>, giving the
+   whole dashboard a consistent, modern dark theme in one place.
+
+   Palette: layered slate surfaces (page < card < elevated), soft borders,
+   gold-tinted accents for hover — keeping STB identity in dark mode.
+   ========================================================================= */
+
+.dark {
+  /* Page background is handled per-layout; surfaces below are components. */
+
+  /* Cards & panels painted with bg-white in light mode. */
+  .bg-white {
+    background-color: #0f172a; /* slate-900 — card surface */
+    border-color: rgba(148, 163, 184, 0.12);
+  }
+
+  /* Softer secondary surface (bg-gray-50) — slightly elevated above cards. */
+  .bg-gray-50 {
+    background-color: #1e293b; /* slate-800 */
+  }
+
+  .bg-gray-100 {
+    background-color: #1e293b;
+  }
+
+  /* Borders: gray-100/200 become translucent slate. */
+  .border-gray-100 { border-color: rgba(148, 163, 184, 0.10); }
+  .border-gray-200 { border-color: rgba(148, 163, 184, 0.16); }
+  .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
+    border-color: rgba(148, 163, 184, 0.10);
+  }
+
+  /* Typography ramp. */
+  .text-gray-400 { color: #94a3b8; }
+  .text-gray-500 { color: #9aa8bd; }
+  .text-gray-600 { color: #cbd5e1; }
+  .text-gray-700 { color: #dbe3ee; }
+  .text-gray-800 { color: #e6ecf5; }
+  .text-gray-900 { color: #f1f5f9; }
+
+  /* Brand color on dark surfaces: navy is invisible, use the lighter primary. */
+  .text-primary { color: #7fb0e8; }
+
+  /* Inputs. */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="date"],
+  input[type="number"],
+  input[type="tel"],
+  textarea,
+  select {
+    background-color: #16213b;
+    border-color: rgba(148, 163, 184, 0.16);
+    color: #e6ecf5;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #64748b;
+  }
+
+  /* Shadow softening: dark shadows on dark backgrounds look muddy; use deeper black. */
+  .shadow-card { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3); }
+  .shadow-xl   { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4); }
+  .shadow-2xl  { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); }
+  .shadow-lg   { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.4); }
+
+  /* Toast popups. */
+  .notification-card {
+    background-color: #0f172a;
+    border-color: rgba(148, 163, 184, 0.15);
+  }
+  .notification-card p {
+    color: #cbd5e1;
+  }
+
+  /* Colored pastel chips (green-50, amber-50…) get translucent equivalents. */
+  .bg-green-50  { background-color: rgba(16, 185, 129, 0.12); }
+  .bg-red-50    { background-color: rgba(239, 68, 68, 0.12); }
+  .bg-amber-50  { background-color: rgba(245, 158, 11, 0.12); }
+  .bg-yellow-50 { background-color: rgba(234, 179, 8, 0.12); }
+  .bg-blue-50   { background-color: rgba(59, 130, 246, 0.12); }
+  .bg-indigo-50 { background-color: rgba(99, 102, 241, 0.12); }
+  .bg-purple-50 { background-color: rgba(168, 85, 247, 0.12); }
+  .bg-orange-50 { background-color: rgba(249, 115, 22, 0.12); }
+
+  .border-green-200  { border-color: rgba(16, 185, 129, 0.30); }
+  .border-red-200    { border-color: rgba(239, 68, 68, 0.30); }
+  .border-amber-200  { border-color: rgba(245, 158, 11, 0.30); }
+  .border-blue-200   { border-color: rgba(59, 130, 246, 0.30); }
+  .border-indigo-100 { border-color: rgba(99, 102, 241, 0.25); }
+}
+
+/* Reduced motion: honour the OS setting everywhere. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-slide-in-right,
+  .animate-scale-in,
+  .animate-float,
+  .animate-bounce {
+    animation: none;
+  }
+}

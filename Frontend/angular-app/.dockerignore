@@ -1,0 +1,18 @@
+# Deps are installed inside the image via `npm ci`; caches and local builds must not be copied in.
+node_modules/
+.angular/
+dist/
+coverage/
+
+# Local env files
+.env
+*.env.local
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*

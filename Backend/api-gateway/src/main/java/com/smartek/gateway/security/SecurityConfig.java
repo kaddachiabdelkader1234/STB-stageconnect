@@ -66,8 +66,8 @@ public class SecurityConfig {
                 .pathMatchers("/actuator/health/**", "/actuator/info", "/actuator/prometheus").permitAll()
 
                 // Auth — only the anonymous entry points are public. A caller without a token
-                // must be able to register and log in, and the health probe stays open.
-                .pathMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh").permitAll()
+                // must be able to register, log in, refresh, or request a password reset.
+                .pathMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/forgot-password", "/api/v1/auth/reset-password").permitAll()
                 .pathMatchers(HttpMethod.GET, "/api/v1/auth/health").permitAll()
                 // /user/{userId} and /validate/{userId} take a guessable numeric id and return
                 // account details (email, role, profile image, experience). /users?role=… lists
@@ -80,6 +80,14 @@ public class SecurityConfig {
                 .pathMatchers(HttpMethod.POST, "/api/v1/auth/encadrants")
                     .hasAuthority(ROLE_ADMIN)
                 .pathMatchers("/api/v1/auth/**").authenticated()
+
+                // SignalR hub — the gateway lets the WebSocket upgrade through; authentication is
+                // enforced by notification-service itself ([Authorize] on the hub, JWT read from the
+                // access_token query param). Promoting the query param to a header here passes the
+                // authorization check but the bearer-authentication step still fails downstream in
+                // the reactive chain (silently, with no log) — simplest correct split of duties is
+                // to not re-authenticate WebSocket upgrades at the gateway at all.
+                .pathMatchers("/hub/**").permitAll()
 
                 // Candidatures — a learner submits and tracks their own; only an admin decides.
                 // Ownership is additionally enforced inside Stagiaire.Service from the JWT, so a
@@ -119,10 +127,29 @@ public class SecurityConfig {
                 .pathMatchers(HttpMethod.DELETE, "/api/v1/evaluations/**").hasAuthority(ROLE_ADMIN)
                 .pathMatchers("/api/v1/evaluations/**").hasAnyAuthority(ROLE_ADMIN, ROLE_TRAINER)
 
-                // Notifications — readable by the recipient; only admin may mutate.
+                // Notifications — readable by the recipient; marking as read is allowed for recipient; admin may mutate/create/delete.
                 .pathMatchers(HttpMethod.GET, "/api/v1/notifications/**")
                     .hasAnyAuthority(ROLE_ADMIN, ROLE_TRAINER, ROLE_LEARNER)
+                .pathMatchers(HttpMethod.PATCH, "/api/v1/notifications/*/read")
+                    .hasAnyAuthority(ROLE_ADMIN, ROLE_TRAINER, ROLE_LEARNER)
+                .pathMatchers(HttpMethod.PUT, "/api/v1/notifications/*/read")
+                    .hasAnyAuthority(ROLE_ADMIN, ROLE_TRAINER, ROLE_LEARNER)
                 .pathMatchers("/api/v1/notifications/**").hasAuthority(ROLE_ADMIN)
+
+                // Subjects, AI Matching & Allocations
+                .pathMatchers(HttpMethod.GET, "/api/v1/subjects/**")
+                    .hasAnyAuthority(ROLE_ADMIN, ROLE_TRAINER, ROLE_LEARNER)
+                .pathMatchers("/api/v1/subjects/**").hasAuthority(ROLE_ADMIN)
+                .pathMatchers("/api/v1/matching/**").hasAuthority(ROLE_ADMIN)
+                .pathMatchers(HttpMethod.POST, "/api/v1/subject-assignments/propose").hasAuthority(ROLE_ADMIN)
+                .pathMatchers("/api/v1/subject-assignments/**")
+                    .hasAnyAuthority(ROLE_ADMIN, ROLE_LEARNER)
+                .pathMatchers(HttpMethod.POST, "/api/v1/subject-change-requests/*/approve", "/api/v1/subject-change-requests/*/reject")
+                    .hasAuthority(ROLE_ADMIN)
+                .pathMatchers(HttpMethod.GET, "/api/v1/subject-change-requests")
+                    .hasAuthority(ROLE_ADMIN)
+                .pathMatchers("/api/v1/subject-change-requests/**")
+                    .hasAnyAuthority(ROLE_ADMIN, ROLE_LEARNER)
 
                 .anyExchange().authenticated()
             )

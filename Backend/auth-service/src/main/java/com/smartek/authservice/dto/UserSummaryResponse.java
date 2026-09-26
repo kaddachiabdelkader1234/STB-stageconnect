@@ -22,5 +22,10 @@ public class UserSummaryResponse {
     private Long userId;
     private String email;
     private String firstName;
+    private String lastName;
+    private String phone;
     private RoleType role;
+
+    /** ISO-8601 creation timestamp — lets the admin sort accounts by age. */
+    private java.time.Instant createdAt;
 }

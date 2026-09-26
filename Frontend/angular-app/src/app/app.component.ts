@@ -14,7 +14,7 @@ import { Subscription } from 'rxjs';
   styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnDestroy {
-  title = 'SMARTEK';
+  title = 'STB StageConnect';
   showHeaderFooter = true;
   private routerEventsSubscription: Subscription;
 
@@ -22,9 +22,10 @@ export class AppComponent implements OnDestroy {
     this.routerEventsSubscription = this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
-      // Hide header and footer on dashboard and auth pages
-      this.showHeaderFooter = !event.url.includes('/dashboard') && 
-                              !event.url.includes('/auth/');
+      // Hide header and footer on app shells (/admin, /espace, legacy /dashboard) and auth pages
+      const url = event.url;
+      const onShell = url.includes('/dashboard') || url.includes('/admin') || url.includes('/espace');
+      this.showHeaderFooter = !onShell && !url.includes('/auth/');
     });
   }
 

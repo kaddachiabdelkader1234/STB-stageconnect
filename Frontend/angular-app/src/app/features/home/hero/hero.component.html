@@ -1,75 +1,60 @@
-<section id="Home" class="relative bg-gradient-to-br from-background via-white to-accent/5 pt-32 pb-20 overflow-hidden">
-  <!-- Decorative elements -->
-  <div class="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
-  <div class="absolute bottom-0 left-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl"></div>
-  
-  <div class="relative px-6 lg:px-8">
-    <div class="container">
-      <div class="flex flex-col gap-6 text-center">
-        <div class="inline-flex items-center justify-center mx-auto px-4 py-2 bg-white rounded-full shadow-md mb-4">
-          <span class="w-2 h-2 bg-primary rounded-full animate-pulse mr-2"></span>
-          <span class="text-sm font-semibold text-text">Plateforme d'apprentissage moderne</span>
-        </div>
-        
-        <h1 class="leading-tight font-bold tracking-tight max-w-4xl mx-auto">
-          Développez vos compétences avec 
-          <span class="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">SMARTEK</span>
-        </h1>
-        <p class="text-xl leading-8 text-gray-600 max-w-2xl mx-auto">
-          Apprenez auprès de mentors de classe mondiale et accélérez votre carrière dans la tech
-        </p>
-        
-        <div class="backdrop-blur-md bg-white/80 border-2 border-white rounded-2xl shadow-card-hover p-8 w-fit mx-auto">
-          <div class="flex items-center justify-center gap-8">
-            <div class="hidden sm:flex -space-x-3">
-              <img class="inline-block h-14 w-14 rounded-full ring-4 ring-white shadow-lg" src="https://images.unsplash.com/photo-1491528323818-fdd1faba62cc?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="img1" />
-              <img class="inline-block h-14 w-14 rounded-full ring-4 ring-white shadow-lg" src="https://images.unsplash.com/photo-1550525811-e5869dd03032?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="img2" />
-              <img class="inline-block h-14 w-14 rounded-full ring-4 ring-white shadow-lg" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2.25&w=256&h=256&q=80" alt="img3" />
-              <img class="inline-block h-14 w-14 rounded-full ring-4 ring-white shadow-lg" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="img4" />
-            </div>
-            <div>
-              <div class="flex justify-center sm:justify-start items-center gap-2">
-                <h3 class="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">4.9</h3>
-                <div class="flex">
-                  <svg *ngFor="let star of [1,2,3,4,5]" class="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                  </svg>
-                </div>
-              </div>
-              <p class="text-sm text-gray-600 font-medium">Noté par +25k étudiants</p>
-            </div>
-          </div>
-        </div>
+<section id="Home" class="relative bg-gradient-to-br from-blue-900 via-blue-950 to-slate-900 pt-32 pb-24 overflow-hidden text-white">
+  <!-- Decorative background elements -->
+  <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
+  <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4"></div>
+  <div class="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:24px_24px] opacity-40"></div>
+
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
+    <div class="text-center max-w-4xl mx-auto">
+      <!-- Badge Officiel STB -->
+      <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-lg mb-8 animate-fade-in">
+        <span class="w-2.5 h-2.5 bg-amber-400 rounded-full animate-pulse"></span>
+        <span class="text-sm font-semibold tracking-wide text-amber-300">Société Tunisienne de Banque • Portail Officiel des Stages</span>
       </div>
 
-      <!-- Search Box -->
-      <div class="mx-auto max-w-4xl mt-12 p-8 bg-white rounded-2xl shadow-card-hover border border-gray-100">
-        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-8 xl:gap-6">
-          <div class="col-span-3">
-            <label class="block text-sm font-semibold text-text mb-2">Domaine</label>
-            <select class="w-full p-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition">
-              <option>Développement Web</option>
-              <option>Développement Mobile</option>
-              <option>Data Science</option>
-              <option>Cloud Computing</option>
-            </select>
-          </div>
-          <div class="col-span-3">
-            <label class="block text-sm font-semibold text-text mb-2">Durée</label>
-            <select class="w-full p-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition">
-              <option>20h par mois</option>
-              <option>30h par mois</option>
-              <option>40h par mois</option>
-              <option>50h par mois</option>
-            </select>
-          </div>
-          <div class="col-span-3 sm:col-span-2 flex items-end">
-            <a href="/#courses-section" class="w-full">
-              <button class="bg-gradient-to-r from-primary to-accent w-full hover:shadow-xl duration-300 text-white font-bold py-4 px-6 rounded-xl hover:cursor-pointer transform hover:scale-105 transition">
-                Commencer
-              </button>
-            </a>
-          </div>
+      <!-- Titre Principal -->
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight mb-6">
+        Façonnez l'avenir de la <br />
+        <span class="bg-gradient-to-r from-blue-300 via-white to-amber-300 bg-clip-text text-transparent">
+          Banque Digitale à la STB
+        </span>
+      </h1>
+
+      <!-- Sous-titre -->
+      <p class="text-lg sm:text-xl text-blue-100/80 max-w-2xl mx-auto leading-relaxed mb-10">
+        Rejoignez la première banque de développement en Tunisie pour un stage d'immersion, de perfectionnement ou de PFE au contact d'experts métiers.
+      </p>
+
+      <!-- CTAs Principaux -->
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+        <a routerLink="/auth/sign-up" class="w-full sm:w-auto px-8 py-4 rounded-xl font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-xl hover:shadow-amber-500/25 hover:scale-105 active:scale-95 transition duration-300 flex items-center justify-center gap-2">
+          <span>Déposer ma candidature</span>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+          </svg>
+        </a>
+        <a routerLink="/auth/sign-in" class="w-full sm:w-auto px-8 py-4 rounded-xl font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md transition duration-300 flex items-center justify-center gap-2">
+          <span>Espace Stagiaire & Encadrant</span>
+        </a>
+      </div>
+
+      <!-- Stat cards row -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+        <div class="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-5 text-center transform hover:-translate-y-1 transition duration-300">
+          <p class="text-3xl font-extrabold text-amber-400 mb-1">+500</p>
+          <p class="text-xs sm:text-sm text-blue-200">Stagiaires par an</p>
+        </div>
+        <div class="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-5 text-center transform hover:-translate-y-1 transition duration-300">
+          <p class="text-3xl font-extrabold text-white mb-1">140+</p>
+          <p class="text-xs sm:text-sm text-blue-200">Agences & Directions</p>
+        </div>
+        <div class="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-5 text-center transform hover:-translate-y-1 transition duration-300">
+          <p class="text-3xl font-extrabold text-amber-400 mb-1">98%</p>
+          <p class="text-xs sm:text-sm text-blue-200">Satisfaction Stagiaires</p>
+        </div>
+        <div class="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-5 text-center transform hover:-translate-y-1 transition duration-300">
+          <p class="text-3xl font-extrabold text-white mb-1">100%</p>
+          <p class="text-xs sm:text-sm text-blue-200">Suivi Digitalisé</p>
         </div>
       </div>
     </div>

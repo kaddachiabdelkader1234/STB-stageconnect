@@ -1,323 +1,194 @@
 {
     "HeaderData": [
         {
-            "label": "Home",
+            "label": "Accueil",
             "href": "/#Home"
         },
         {
-            "label": "Courses",
-            "href": "/#Courses"
+            "label": "Pôles Métiers",
+            "href": "/#poles-section"
         },
         {
-            "label": "Mentors",
+            "label": "Processus de Stage",
+            "href": "/#processus-section"
+        },
+        {
+            "label": "Encadrement",
             "href": "/#mentors-section"
         },
         {
-            "label": "Testimonial",
+            "label": "Témoignages",
             "href": "/#testimonial-section"
         },
         {
-            "label": "Join",
-            "href": "/#join-section"
-        },
-        {
-            "label": "Contact Us",
+            "label": "Contact",
             "href": "/#contact"
-        },
-        {
-            "label": "Docs",
-            "href": "/documentation"
         }
     ],
     "CourseData": [
         {
-            "name": "Mobile Development"
+            "name": "Informatique & Digital Banking"
         },
         {
-            "name": "Web Development"
+            "name": "Finance & Marchés de Capitaux"
         },
         {
-            "name": "Data Science"
+            "name": "Risques, Audit & Conformité"
         },
         {
-            "name": "Cloud Computing"
+            "name": "Monétique & Fintech"
         }
     ],
     "HourData": [
         {
-            "name": "20hrs in a Month"
+            "name": "Stage d'Immersion (1 mois)"
         },
         {
-            "name": "30hrs in a Month"
+            "name": "Stage de Perfectionnement (2 mois)"
         },
         {
-            "name": "40hrs in a Month"
+            "name": "Stage PFE (4 à 6 mois)"
         },
         {
-            "name": "50hrs in a Month"
+            "name": "Alternance & Professionnel"
         }
     ],
     "Companiesdata": [
         {
-            "imgSrc": "/images/slickCompany/airbnb.svg"
+            "imgSrc": "Direction des Systèmes d'Information"
         },
         {
-            "imgSrc": "/images/slickCompany/hubspot.svg"
+            "imgSrc": "Direction de la Trésorerie & Marchés"
         },
         {
-            "imgSrc": "/images/slickCompany/microsoft.svg"
+            "imgSrc": "Direction de la Monétique"
         },
         {
-            "imgSrc": "/images/slickCompany/google.svg"
+            "imgSrc": "Direction des Risques de Crédit"
         },
         {
-            "imgSrc": "/images/slickCompany/walmart.svg"
+            "imgSrc": "Direction du Réseau d'Agences"
         },
         {
-            "imgSrc": "/images/slickCompany/fedex.svg"
+            "imgSrc": "Direction du Capital Humain"
         }
     ],
     "CourseDetailData": [
         {
-            "course": "HTML, CSS, JS",
-            "imageSrc": "/images/courses/coursesOne.svg",
-            "profession": "HTML, CSS, Javascript Development",
-            "price": "40",
-            "category": "webdevelopment"
+            "course": "Développement & Digital Banking",
+            "imageSrc": "DSI - Pôle Digital",
+            "profession": "Architectures Microservices, Cloud Banking, IA & Sécurité Web",
+            "price": "PFE / Master",
+            "category": "it"
         },
         {
-            "course": "Node.js",
-            "imageSrc": "/images/courses/coursesTwo.svg",
-            "profession": "Backend with Node.js and Express.js",
-            "price": "21",
-            "category": "webdevelopment"
+            "course": "Finance & Gestion des Portefeuilles",
+            "imageSrc": "Direction des Marchés",
+            "profession": "Analyse Financière, Trading, Trésorerie & Ingénierie Financière",
+            "price": "PFE / Finance",
+            "category": "finance"
         },
         {
-            "course": "Database",
-            "imageSrc": "/images/courses/coursesThree.svg",
-            "profession": "Learn Mongodb with Mongoose",
-            "price": "21",
-            "category": "webdevelopment"
+            "course": "Cybersécurité & Audit SI",
+            "imageSrc": "Direction de la Sécurité SI",
+            "profession": "Sécurité des transactions bancaires, Pentest, Conformité ISO 27001",
+            "price": "PFE / Sécurité",
+            "category": "it"
         },
         {
-            "course": "React.js",
-            "imageSrc": "/images/courses/coursesFour.svg",
-            "profession": "Learn React with Redux toolkit",
-            "price": "99",
-            "category": "webdevelopment"
+            "course": "Monétique & Moyens de Paiement",
+            "imageSrc": "Pôle Monétique",
+            "profession": "Systèmes de compensation, Mobile Payment, Cartes EMV & Fintech",
+            "price": "Ingénieur / Licence",
+            "category": "monetique"
         },
         {
-            "course": "React Native",
-            "imageSrc": "/images/courses/coursesOne.svg",
-            "profession": "Learn React Native with Node.js",
-            "price": "89",
-            "category": "mobiledevelopment"
+            "course": "Modélisation des Risques de Crédit",
+            "imageSrc": "Direction des Risques",
+            "profession": "Scoring bancaire, Normes IFRS 9, Stress Testing & Data Analytics",
+            "price": "Master / Actuariat",
+            "category": "risques"
         },
         {
-            "course": "Swift",
-            "imageSrc": "/images/courses/coursesThree.svg",
-            "profession": "Learn Swift from Scratch",
-            "price": "89",
-            "category": "mobiledevelopment"
-        },
-        {
-            "course": "Flutter",
-            "imageSrc": "/images/courses/coursesFour.svg",
-            "profession": "Flutter App Development",
-            "price": "69",
-            "category": "mobiledevelopment"
-        },
-        {
-            "course": "Onsen UI",
-            "imageSrc": "/images/courses/coursesTwo.svg",
-            "profession": "Learn Onsen Ui with HTML, CSS",
-            "price": "69",
-            "category": "mobiledevelopment"
-        },
-        {
-            "course": "TensorFlow",
-            "imageSrc": "/images/courses/coursesTwo.svg",
-            "profession": "Learn TensorFlow with SQL",
-            "price": "99",
-            "category": "datascience"
-        },
-        {
-            "course": "AWS",
-            "imageSrc": "/images/courses/coursesFour.svg",
-            "profession": "AWS Deep Learning AMI",
-            "price": "99",
-            "category": "datascience"
-        },
-        {
-            "course": "Bokeh",
-            "imageSrc": "/images/courses/coursesOne.svg",
-            "profession": "Learn Bokeh with Python",
-            "price": "99",
-            "category": "datascience"
-        },
-        {
-            "course": "Scikit",
-            "imageSrc": "/images/courses/coursesThree.svg",
-            "profession": "Scikit with Python Development",
-            "price": "89",
-            "category": "datascience"
-        },
-        {
-            "course": "Laas",
-            "imageSrc": "/images/courses/coursesThree.svg",
-            "profession": "Infra-as-a-Service",
-            "price": "21",
-            "category": "cloudcomputing"
-        },
-        {
-            "course": "Iaas",
-            "imageSrc": "/images/courses/coursesFour.svg",
-            "profession": "Info-as-a-Service",
-            "price": "29",
-            "category": "cloudcomputing"
-        },
-        {
-            "course": "Paas",
-            "imageSrc": "/images/courses/coursesOne.svg",
-            "profession": "Platform-as-a-Service",
-            "price": "99",
-            "category": "cloudcomputing"
-        },
-        {
-            "course": "Saas",
-            "imageSrc": "/images/courses/coursesTwo.svg",
-            "profession": "Software-as-a-Service",
-            "price": "58",
-            "category": "cloudcomputing"
+            "course": "Banque de Détail & Gestion Clientèle",
+            "imageSrc": "Réseau Bancaire STB",
+            "profession": "Opérations bancaires, Financement des PME, Relation client",
+            "price": "Licence / Immersion",
+            "category": "reseau"
         }
     ],
     "MentorData": [
         {
-            "name": "Senior UX Designer",
+            "name": "Dr. Mohamed Ben Salem",
             "href": "#",
-            "imageSrc": "/images/mentor/boy1.svg",
-            "imageAlt": "Front of men's Basic Tee in black.",
-            "color": "Shoo Thar Mein"
+            "imageSrc": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
+            "imageAlt": "Directeur SI",
+            "color": "Direction des Systèmes d'Information"
         },
         {
-            "name": "Photoshop Instructor",
+            "name": "Mme. Amel Trabelsi",
             "href": "#",
-            "imageSrc": "/images/mentor/boy2.svg",
-            "imageAlt": "Front of men's Basic Tee in black.",
-            "color": "Cristian Doru Barin"
+            "imageSrc": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80",
+            "imageAlt": "Chef Département Risques",
+            "color": "Direction de la Gestion des Risques"
         },
         {
-            "name": "SEO Expert",
+            "name": "M. Karim Chaabane",
             "href": "#",
-            "imageSrc": "/images/mentor/boy3.svg",
-            "imageAlt": "Front of men's Basic Tee in black.",
-            "color": "Tanzeel Ur Rehman"
-        },
-        {
-            "name": "UI/UX Designer",
-            "href": "#",
-            "imageSrc": "/images/mentor/boy4.svg",
-            "imageAlt": "Front of men's Basic Tee in black.",
-            "color": "Andrew Williams"
-        },
-        {
-            "name": "Web Development / Web Design",
-            "href": "#",
-            "imageSrc": "/images/mentor/boy5.svg",
-            "imageAlt": "Front of men's Basic Tee in black.",
-            "color": "Brad Schiff"
-        },
-        {
-            "name": "Adobe Certified Instructor",
-            "href": "#",
-            "imageSrc": "/images/mentor/girl1.svg",
-            "imageAlt": "Front of men's Basic Tee in black.",
-            "color": "Daniel Walter Scott"
+            "imageSrc": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80",
+            "imageAlt": "Expert Trésorerie",
+            "color": "Direction des Marchés Financiers"
         }
     ],
     "TestimonialData": [
         {
-            "profession": "UX/UI Designer",
-            "name": "Andrew Williams",
-            "imgSrc": "/images/testimonial/user-1.jpg",
-            "starimg": "/images/testimonial/stars.png",
-            "detail": "I have been a Junior Graphic Designer for more then 10 years. Some things are problem that I had and teach how to solve them. That's why this course is so great!"
+            "name": "Yasmine Mansour",
+            "profession": "Ancienne stagiaire PFE (DSI) — Actuellement Ingénieure DevOps à la STB",
+            "imgSrc": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
+            "starimg": "/images/star.svg",
+            "detail": "Mon stage PFE à la STB m'a permis de travailler sur une architecture microservices d'envergure bancaire. L'encadrement technique était exceptionnel et a débouché sur mon recrutement direct !"
         },
         {
-            "profession": "UX/UI Designer",
-            "name": "Cristian Doru Barin",
-            "imgSrc": "/images/testimonial/user-2.jpg",
-            "starimg": "/images/testimonial/stars.png",
-            "detail": "I have been a Junior Graphic Designer for more then 10 years. Some things are problem that I had and teach how to solve them. That's why this course is so great!"
+            "name": "Ahmed Gharbi",
+            "profession": "Stagiaire Master Finance — Pôle Trésorerie & Marchés",
+            "imgSrc": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
+            "starimg": "/images/star.svg",
+            "detail": "La plateforme de gestion des stages a rendu les démarches administratives et le suivi du journal de bord ultra fluides. Une expérience professionnelle enrichissante au cœur de la banque."
         },
         {
-            "profession": "UX/UI Designer",
-            "name": "Tanzeel Ur Rehman",
-            "imgSrc": "/images/testimonial/user-3.jpg",
-            "starimg": "/images/testimonial/stars.png",
-            "detail": "I have been a Junior Graphic Designer for more then 10 years. Some things are problem that I had and teach how to solve them. That's why this course is so great!"
-        },
-        {
-            "profession": "UX/UI Designer",
-            "name": "Andrew Williams",
-            "imgSrc": "/images/testimonial/user-1.jpg",
-            "starimg": "/images/testimonial/stars.png",
-            "detail": "I have been a Junior Graphic Designer for more then 10 years. Some things are problem that I had and teach how to solve them. That's why this course is so great!"
+            "name": "Sarra Bouazizi",
+            "profession": "Stagiaire Licence Informatique — Pôle Monétique",
+            "imgSrc": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80",
+            "starimg": "/images/star.svg",
+            "detail": "J'ai pu participer à l'intégration des solutions de paiement digital. L'attestation de stage officielle avec note d'évaluation générée directement en fin de stage est un vrai plus pour mon dossier."
         }
     ],
     "FooterLinkData": [
         {
-            "section": "Company",
+            "section": "Portail des Stages",
             "links": [
-                {
-                    "label": "Home",
-                    "href": "/#Home"
-                },
-                {
-                    "label": "Courses",
-                    "href": "/#Courses"
-                },
-                {
-                    "label": "Mentors",
-                    "href": "/#mentors-section"
-                },
-                {
-                    "label": "Testimonial",
-                    "href": "/#testimonial-section"
-                },
-                {
-                    "label": "Join",
-                    "href": "/#join-section"
-                },
-                {
-                    "label": "Contact Us",
-                    "href": "/#contact"
-                }
+                { "label": "Déposer une Candidature", "href": "/auth/sign-up" },
+                { "label": "Suivi de Dossier", "href": "/auth/sign-in" },
+                { "label": "Offres & Pôles STB", "href": "/#poles-section" },
+                { "label": "Guide du Stagiaire", "href": "/#processus-section" }
             ]
         },
         {
-            "section": "Support",
+            "section": "Société Tunisienne de Banque",
             "links": [
-                {
-                    "label": "Help center",
-                    "href": "/"
-                },
-                {
-                    "label": "Terms of service",
-                    "href": "/"
-                },
-                {
-                    "label": "Legal",
-                    "href": "/"
-                },
-                {
-                    "label": "Privacy Policy",
-                    "href": "/"
-                },
-                {
-                    "label": "Status",
-                    "href": "/"
-                }
+                { "label": "À propos de la STB", "href": "https://www.stb.com.tn" },
+                { "label": "Réseau d'Agences", "href": "https://www.stb.com.tn" },
+                { "label": "Engagement RSE", "href": "https://www.stb.com.tn" },
+                { "label": "Carrières & Talents", "href": "https://www.stb.com.tn" }
+            ]
+        },
+        {
+            "section": "Assistance & Contact",
+            "links": [
+                { "label": "Siège Social : Rue Hédi Nouira, Tunis", "href": "#contact" },
+                { "label": "Tél : +216 70 140 000", "href": "tel:+21670140000" },
+                { "label": "Email : stages@stb.com.tn", "href": "mailto:stages@stb.com.tn" },
+                { "label": "Mentions Légales", "href": "#" }
             ]
         }
     ]

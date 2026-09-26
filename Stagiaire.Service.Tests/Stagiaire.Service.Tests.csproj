@@ -14,6 +14,9 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="xunit" Version="2.5.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+    <!-- Drives the SignalR hub from the integration tests (real-time scoping). Must match the
+         server-side Microsoft.AspNetCore.SignalR version used by Notification.Service. -->
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.8" />
   </ItemGroup>
 
   <ItemGroup>

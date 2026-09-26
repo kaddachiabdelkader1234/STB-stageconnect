@@ -57,6 +57,15 @@ builder.Services.AddMassTransit(x =>
             h.Password(builder.Configuration["RabbitMQ:Password"] ?? "guest");
         });
 
+        // Retry transient failures (DB blip, SMTP timeout, brief network error) with exponential
+        // back-off. After the limit, MassTransit moves the message to the transport dead-letter
+        // queue "<queue>_error" (visible in the RabbitMQ management UI) instead of dropping it.
+        cfg.UseMessageRetry(r => r.Exponential(
+            retryLimit: 5,
+            minInterval: TimeSpan.FromSeconds(1),
+            maxInterval: TimeSpan.FromSeconds(30),
+            intervalDelta: TimeSpan.FromSeconds(5)));
+
         cfg.ConfigureEndpoints(context);
     });
 });

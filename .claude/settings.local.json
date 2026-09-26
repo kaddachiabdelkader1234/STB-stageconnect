@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "PowerShell(docker compose up *)",
-      "PowerShell(docker compose ps *)"
+      "PowerShell(docker compose ps *)",
+      "PowerShell(Get-ChildItem -Path \"Frontend/angular-app/src/app\" -Recurse -Directory | ForEach-Object { $_.FullName.Replace\\(\\(Get-Location\\).Path, \"\"\\) })"
     ]
   }
 }

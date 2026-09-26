@@ -1,0 +1,26 @@
+# Root build context is shared by all four .NET services and the Angular frontend.
+# Keep it small: exclude build caches, VCS data, local secrets and containers.
+**/bin/
+**/obj/
+**/node_modules/
+**/.angular/
+**/.vs/
+**/TestResults/
+**/*.user
+
+.git/
+.gitignore
+
+# Local secrets — must never enter an image layer.
+.env
+*.env.local
+
+# Docker/K8s/monitoring assets are not needed to compile the services.
+k8s/
+monitoring/
+nginx/certs/
+
+# Docs and logs
+*.md
+*.log
+*.err

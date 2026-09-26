@@ -1,19 +1,24 @@
-<section id="testimonial-section" class="bg-white py-16">
-  <div class="container">
-    <h2 class="text-center mb-4">What our students say</h2>
-    <p class="text-center text-gray-600 mb-12">Hear from our successful students</p>
+<section id="testimonial-section" class="bg-white py-20">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-3xl mx-auto mb-14">
+      <span class="text-xs font-bold uppercase tracking-widest text-accent bg-accent/10 px-3 py-1 rounded-full">Paroles de Stagiaires</span>
+      <h2 class="text-3xl font-extrabold text-gray-900 mt-3">Ils ont fait leur stage à la STB</h2>
+      <p class="text-gray-600 mt-2">Des parcours concrets, des compétences acquises, et pour beaucoup, un recrutement à la clé.</p>
+    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <div *ngFor="let testimonial of testimonials" class="bg-gray-50 rounded-lg p-6 shadow-lg hover:shadow-xl transition duration-300">
-        <div class="flex items-center mb-4">
-          <img [src]="testimonial.imgSrc" [alt]="testimonial.name" class="w-16 h-16 rounded-full mr-4" />
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div *ngFor="let testimonial of testimonials" class="bg-slate-50 rounded-2xl p-8 border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition duration-300 flex flex-col">
+        <svg class="w-10 h-10 text-accent/40 mb-4" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
+        </svg>
+        <p class="text-gray-700 leading-relaxed flex-1 mb-6">{{ testimonial.detail }}</p>
+        <div class="flex items-center gap-4 pt-4 border-t border-gray-200">
+          <img [src]="testimonial.imgSrc" [alt]="testimonial.name" class="w-12 h-12 rounded-full object-cover ring-2 ring-white shadow" />
           <div>
-            <h4 class="font-bold">{{ testimonial.name }}</h4>
-            <p class="text-sm text-gray-600">{{ testimonial.profession }}</p>
+            <h4 class="font-bold text-gray-900 text-sm">{{ testimonial.name }}</h4>
+            <p class="text-xs text-gray-500 leading-snug">{{ testimonial.profession }}</p>
           </div>
         </div>
-        <img [src]="testimonial.starimg" alt="Rating" class="mb-4 h-5" />
-        <p class="text-gray-700">{{ testimonial.detail }}</p>
       </div>
     </div>
   </div>

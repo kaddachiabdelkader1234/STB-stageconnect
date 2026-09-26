@@ -139,10 +139,14 @@
                 </button>
                 <span *ngIf="!c.cvDisponible" class="text-xs text-gray-400 italic">— CV</span>
                 <button *ngIf="c.documentDisponible" type="button" (click)="previewer(c, 'document')"
-                        class="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition" title="Consulter la candidature">
-                  <span class="material-icons text-sm">visibility</span> Dossier
+                        class="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition" title="Consulter la demande de stage">
+                  <span class="material-icons text-sm">visibility</span> Demande
                 </button>
-                <span *ngIf="!c.documentDisponible" class="text-xs text-gray-400 italic">— Dossier</span>
+                <span *ngIf="!c.documentDisponible" class="text-xs text-gray-400 italic">— Demande</span>
+                <button type="button" (click)="ouvrirAiMatching(c)"
+                        class="inline-flex items-center gap-1 rounded-lg bg-purple-50 px-2.5 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-100 transition" title="Aide à la décision IA (Matching Sujet)">
+                  <span class="material-icons text-sm text-purple-600">auto_awesome</span> IA
+                </button>
               </div>
             </td>
             <td class="px-5 py-4 text-right whitespace-nowrap">
@@ -223,29 +227,119 @@
 
 <!-- ============ Decision panel ============ -->
 <div *ngIf="selection && mode" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" (click)="fermer()">
-  <div class="w-full max-w-2xl rounded-2xl bg-white p-8 shadow-2xl" (click)="$event.stopPropagation()">
-    <!-- Accept -->
+  <div class="w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl bg-white p-7 shadow-2xl" (click)="$event.stopPropagation()">
+    <!-- Accept with Integrated AI & Subject Choice -->
     <ng-container *ngIf="mode === 'accepter'">
-      <h3 class="text-2xl font-bold text-gray-800 mb-1">Accepter la candidature</h3>
-      <p class="text-sm text-gray-500 mb-6">{{ selection.prenom }} {{ selection.nom }} — {{ selection.ecole }}</p>
-
-      <div class="space-y-5">
+      <div class="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1.5">Encadrant *</label>
+          <div class="flex items-center gap-2">
+            <span class="material-icons text-teal-600 text-2xl">verified</span>
+            <h3 class="text-xl font-bold text-gray-800">Accepter la candidature & Attribuer un Sujet</h3>
+          </div>
+          <p class="text-xs text-gray-500 mt-0.5">
+            Candidat : <strong class="text-gray-800">{{ selection.prenom }} {{ selection.nom }}</strong> — {{ selection.ecole }} ({{ typeStageLabels[selection.typeStage] }})
+          </p>
+        </div>
+        <button type="button" (click)="fermer()" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+      </div>
+
+      <!-- AI Assistance & Recommendation Spotlight -->
+      <div class="mb-5 rounded-2xl bg-gradient-to-br from-purple-50/70 via-indigo-50/40 to-white border border-purple-100 p-4 shadow-2xs">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="material-icons text-purple-600 text-lg">auto_awesome</span>
+            <h4 class="text-xs font-bold text-purple-900 uppercase tracking-wider">Aide à la décision IA — Profil & Sujets Recommandés</h4>
+          </div>
+          <span *ngIf="chargementIa" class="inline-flex items-center gap-1 text-[11px] text-purple-600 font-medium">
+            <span class="material-icons text-xs animate-spin">refresh</span> Analyse IA en cours…
+          </span>
+          <span *ngIf="!chargementIa && profilIa" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-800">
+            Profil analysé ({{ profilIa.provider }})
+          </span>
+        </div>
+
+        <!-- Extracted Skills -->
+        <div *ngIf="profilIa && profilIa.skills && profilIa.skills.length > 0" class="mb-3">
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Compétences extraites du CV :</p>
+          <div class="flex flex-wrap gap-1">
+            <span *ngFor="let skill of profilIa.skills.slice(0, 8)"
+                  class="text-[11px] px-2 py-0.5 rounded-lg bg-white border border-purple-200 text-purple-800 font-medium shadow-2xs">
+              {{ skill }}
+            </span>
+            <span *ngIf="profilIa.skills.length > 8" class="text-[10px] text-purple-500 self-center">
+              +{{ profilIa.skills.length - 8 }} autres
+            </span>
+          </div>
+        </div>
+
+        <!-- Top Recommended Subject Card -->
+        <div *ngIf="topRecommendation" class="p-3 bg-white rounded-xl border border-purple-200 flex items-center justify-between shadow-2xs">
+          <div class="flex-1 pr-3">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-800">
+                ⭐ Recommandation IA : {{ topRecommendation.compatibilityScore | number:'1.0-0' }}%
+              </span>
+              <span class="text-xs font-bold text-gray-800">{{ topRecommendation.subjectTitle }}</span>
+            </div>
+            <p class="text-[11px] text-gray-500 line-clamp-1">{{ topRecommendation.explanation }}</p>
+          </div>
+          <button type="button" (click)="onSubjectSelected(topRecommendation.subjectId)"
+                  class="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                  [ngClass]="selectedSubjectId === topRecommendation.subjectId ? 'bg-purple-600 text-white' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'">
+            {{ selectedSubjectId === topRecommendation.subjectId ? '✓ Choisi' : 'Sélectionner' }}
+          </button>
+        </div>
+
+        <div *ngIf="analyseIaErreur" class="text-xs text-amber-700 mt-1">
+          {{ analyseIaErreur }}
+        </div>
+      </div>
+
+      <!-- Form Inputs -->
+      <div class="space-y-4">
+        <!-- 1. Sujet de stage attribué (MANDATORY) -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+            Sujet de stage attribué au stagiaire *
+          </label>
+          <select [(ngModel)]="selectedSubjectId" (ngModelChange)="onSubjectSelected($event)"
+                  class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-teal-500 focus:outline-none bg-white">
+            <option [ngValue]="null">— Choisir un sujet de stage —</option>
+            <optgroup label="Sujets recommandés par l'IA" *ngIf="recommandations.length > 0">
+              <option *ngFor="let r of recommandations" [value]="r.subjectId">
+                ⭐ [Score: {{ r.compatibilityScore | number:'1.0-0' }}%] {{ r.subjectTitle }} ({{ r.department }})
+              </option>
+            </optgroup>
+            <optgroup label="Tous les autres sujets ouverts" *ngIf="sujetsDisponibles.length > 0">
+              <option *ngFor="let s of sujetsDisponibles" [value]="s.id">
+                {{ s.title }} ({{ s.department }})
+              </option>
+            </optgroup>
+          </select>
+          <p *ngFor="let m of erreursChamps['selectedSubjectId']" class="mt-1 text-xs text-red-600 font-semibold">{{ m }}</p>
+          <p *ngIf="sujetsDisponibles.length === 0 && !chargementSujets" class="mt-1 text-xs text-amber-700">
+            Aucun sujet de stage ouvert actuellement. Créez un sujet dans l'onglet "Sujets de stage".
+          </p>
+        </div>
+
+        <!-- 2. Encadrant (MANDATORY) -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1.5">Encadrant STB *</label>
           <select [(ngModel)]="encadrantId"
-                  class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-teal-500 focus:outline-none">
-            <option [ngValue]="null">— Sélectionner —</option>
+                  class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-teal-500 focus:outline-none bg-white">
+            <option [ngValue]="null">— Sélectionner un encadrant —</option>
             <option *ngFor="let e of encadrants" [ngValue]="e.userId">{{ e.firstName }} ({{ e.email }})</option>
           </select>
-          <p *ngFor="let m of erreursChamps['encadrantId']" class="mt-1 text-xs text-red-600">{{ m }}</p>
+          <p *ngFor="let m of erreursChamps['encadrantId']" class="mt-1 text-xs text-red-600 font-semibold">{{ m }}</p>
           <p *ngIf="encadrants.length === 0" class="mt-1 text-xs text-amber-700">
             Aucun encadrant disponible — créez un compte avec le rôle TRAINER.
           </p>
         </div>
 
+        <!-- 3. Département & Dates -->
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-1.5">Département</label>
-          <input [(ngModel)]="departement" type="text"
+          <input [(ngModel)]="departement" type="text" placeholder="Département d'accueil"
                  class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-teal-500 focus:outline-none">
           <p *ngFor="let m of erreursChamps['departement']" class="mt-1 text-xs text-red-600">{{ m }}</p>
         </div>
@@ -265,14 +359,15 @@
         </div>
       </div>
 
-      <div class="mt-6 flex justify-end gap-3">
+      <div class="mt-6 flex justify-end gap-3 pt-3 border-t border-gray-100">
         <button type="button" (click)="fermer()"
-                class="rounded-xl border border-gray-200 px-6 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50">
+                class="rounded-xl border border-gray-200 px-6 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">
           Annuler
         </button>
-        <button type="button" (click)="confirmerAcceptation()" [disabled]="actionEnCours"
-                class="rounded-xl bg-gradient-to-r from-teal-600 to-sky-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:opacity-90 disabled:opacity-50">
-          {{ actionEnCours ? 'Traitement…' : 'Confirmer l\'acceptation' }}
+        <button type="button" (click)="confirmerAcceptation()" [disabled]="actionEnCours || !selectedSubjectId || !encadrantId"
+                class="rounded-xl bg-gradient-to-r from-teal-600 to-sky-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:opacity-90 disabled:opacity-50 transition flex items-center gap-2">
+          <span *ngIf="actionEnCours" class="material-icons text-sm animate-spin">refresh</span>
+          {{ actionEnCours ? 'Acceptation et affectation…' : 'Confirmer l\'acceptation & le sujet' }}
         </button>
       </div>
     </ng-container>
@@ -296,6 +391,168 @@
         <button type="button" (click)="confirmerRejet()" [disabled]="actionEnCours"
                 class="rounded-xl bg-red-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:bg-red-700 disabled:opacity-50">
           {{ actionEnCours ? 'Traitement…' : 'Confirmer le rejet' }}
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- AI Decision Support (Matching) -->
+    <ng-container *ngIf="mode === 'ia'">
+      <div class="flex items-center justify-between pb-3 border-b border-gray-200 mb-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="material-icons text-purple-600 text-2xl">auto_awesome</span>
+            <h3 class="text-xl font-bold text-gray-900">Aide à la Décision IA — Matching Sujets</h3>
+          </div>
+          <p class="text-xs text-gray-500 mt-0.5">
+            Candidat : <strong class="text-gray-800">{{ selection.prenom }} {{ selection.nom }}</strong> ({{ selection.ecole }} • {{ typeStageLabels[selection.typeStage] }})
+          </p>
+        </div>
+        <button type="button" (click)="fermer()" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+      </div>
+
+      <!-- Feedback alerts -->
+      <div *ngIf="succesIa" class="p-3 rounded-xl bg-green-50 text-green-700 text-xs mb-3 flex items-center justify-between">
+        <span>{{ succesIa }}</span>
+        <button (click)="succesIa = null" class="font-bold">&times;</button>
+      </div>
+      <div *ngIf="erreurIa" class="p-3 rounded-xl bg-red-50 text-red-700 text-xs mb-3 flex items-center justify-between">
+        <span>{{ erreurIa }}</span>
+        <button (click)="erreurIa = null" class="font-bold">&times;</button>
+      </div>
+
+      <!-- Current proposal status if already assigned -->
+      <div *ngIf="affectationActuelle" class="p-3.5 rounded-xl bg-blue-50 border border-blue-200 mb-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="material-icons text-blue-600 text-lg">assignment_turned_in</span>
+          <div class="text-xs">
+            <span class="font-bold text-blue-900">Sujet actuellement proposé :</span>
+            <span class="text-blue-800 ml-1 font-semibold">{{ affectationActuelle.subjectTitle }}</span>
+            <span class="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                  [ngClass]="{
+                    'bg-green-100 text-green-800': affectationActuelle.status === 'Accepted',
+                    'bg-amber-100 text-amber-800': affectationActuelle.status === 'Proposed',
+                    'bg-purple-100 text-purple-800': affectationActuelle.status === 'ChangeRequested'
+                  }">
+              {{ affectationActuelle.status }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trigger Parsing Button -->
+      <div class="flex items-center justify-between bg-purple-50/60 border border-purple-100 rounded-2xl p-4 mb-4">
+        <div>
+          <p class="text-xs font-bold text-purple-900">
+            {{ profilIa ? 'Profil CV analysé avec l\'IA' : 'CV non encore analysé' }}
+          </p>
+          <p class="text-[11px] text-purple-700">
+            {{ profilIa ? 'Provider utilisé : ' + profilIa.provider + ' (analysé le ' + (profilIa.parsedAt | date:'dd/MM/yyyy HH:mm') + ')' : 'Lancez l\'extraction automatique des compétences pour obtenir les recommandations.' }}
+          </p>
+        </div>
+        <button type="button" (click)="analyserCvIa(!!profilIa)" [disabled]="chargementIa"
+                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs shadow-md shadow-purple-600/25 transition disabled:opacity-50">
+          <span class="material-icons text-sm" [class.animate-spin]="chargementIa">{{ chargementIa ? 'hourglass_top' : 'psychology' }}</span>
+          {{ chargementIa ? 'Analyse en cours…' : (profilIa ? 'Réanalyser le CV' : 'Analyser le CV avec l\'IA') }}
+        </button>
+      </div>
+
+      <!-- Parsed Profile Content -->
+      <div *ngIf="profilIa" class="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
+        <!-- Candidate skills chips -->
+        <div class="p-3.5 rounded-xl bg-gray-50 border border-gray-100">
+          <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Compétences extraites du CV</p>
+          <div class="flex flex-wrap gap-1.5">
+            <span *ngFor="let skill of profilIa.skills"
+                  class="text-xs px-2.5 py-0.5 rounded-lg bg-white border border-gray-200 text-gray-800 font-medium shadow-2xs">
+              {{ skill }}
+            </span>
+            <span *ngIf="profilIa.skills.length === 0" class="text-xs text-gray-400 italic">Aucune compétence détectée</span>
+          </div>
+          <div *ngIf="profilIa.education" class="mt-2 pt-2 border-t border-gray-200/60 text-xs text-gray-600">
+            <strong class="text-gray-800">Formation :</strong> {{ profilIa.education }}
+          </div>
+        </div>
+
+        <!-- Recommendations Header -->
+        <div class="pt-2">
+          <h4 class="text-sm font-bold text-gray-800 flex items-center justify-between mb-3">
+            <span>Sujets compatibles recommandés ({{ recommandations.length }})</span>
+            <span class="text-xs font-normal text-gray-400">Classés par score de compatibilité</span>
+          </h4>
+
+          <div *ngIf="recommandations.length === 0" class="text-center py-6 text-gray-400 text-xs italic">
+            Aucun sujet de stage ouvert n'a été trouvé dans le catalogue.
+          </div>
+
+          <!-- Cards list -->
+          <div class="space-y-3">
+            <div *ngFor="let rec of recommandations"
+                 class="p-4 rounded-2xl border transition hover:shadow-md bg-white"
+                 [ngClass]="{
+                   'border-green-300 bg-green-50/10': rec.compatibilityScore >= 75,
+                   'border-amber-300 bg-amber-50/10': rec.compatibilityScore >= 50 && rec.compatibilityScore < 75,
+                   'border-gray-200': rec.compatibilityScore < 50
+                 }">
+              <div class="flex items-start justify-between gap-3 mb-2">
+                <div>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-md uppercase"
+                        [ngClass]="rec.compatibilityScore >= 75 ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'">
+                    Score : {{ rec.compatibilityScore | number:'1.0-0' }}%
+                  </span>
+                  <span class="text-xs text-gray-500 ml-2 font-medium">{{ rec.department }} • {{ rec.typeStage }}</span>
+                  <h5 class="text-sm font-bold text-gray-900 mt-1">{{ rec.subjectTitle }}</h5>
+                </div>
+
+                <button type="button" (click)="proposerSujet(rec)"
+                        [disabled]="proposerEnCoursId === rec.subjectId || rec.filledPositions >= rec.availablePositions"
+                        class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-dark text-white text-xs font-semibold shadow-sm transition disabled:opacity-40">
+                  <span class="material-icons text-sm">send</span>
+                  {{ proposerEnCoursId === rec.subjectId ? 'Envoi…' : 'Proposer ce sujet' }}
+                </button>
+              </div>
+
+              <!-- Matched Skills -->
+              <div class="space-y-1 mb-2">
+                <div class="flex items-center gap-1 text-[11px] text-green-700 font-semibold">
+                  <span class="material-icons text-sm">check_circle</span>
+                  <span>Compétences validées :</span>
+                </div>
+                <div class="flex flex-wrap gap-1">
+                  <span *ngFor="let m of rec.matchedSkills"
+                        class="text-[11px] px-2 py-0.5 rounded-md bg-green-100 text-green-800 font-medium">
+                    {{ m }}
+                  </span>
+                  <span *ngIf="rec.matchedSkills.length === 0" class="text-[11px] text-gray-400 italic">Aucune</span>
+                </div>
+              </div>
+
+              <!-- Missing Skills -->
+              <div *ngIf="rec.missingSkills && rec.missingSkills.length > 0" class="space-y-1 mb-2">
+                <div class="flex items-center gap-1 text-[11px] text-gray-500 font-semibold">
+                  <span class="material-icons text-sm">info</span>
+                  <span>Compétences à consolider :</span>
+                </div>
+                <div class="flex flex-wrap gap-1">
+                  <span *ngFor="let m of rec.missingSkills"
+                        class="text-[11px] px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 font-medium">
+                    {{ m }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Explanation -->
+              <p class="text-xs text-gray-600 bg-gray-50 p-2.5 rounded-xl border border-gray-100 mt-2">
+                {{ rec.explanation }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 pt-3 border-t border-gray-200 flex justify-end">
+        <button type="button" (click)="fermer()"
+                class="rounded-xl border border-gray-200 px-5 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50">
+          Fermer
         </button>
       </div>
     </ng-container>

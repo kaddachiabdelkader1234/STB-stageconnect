@@ -1,13 +1,24 @@
-<section id="mentors-section" class="bg-gray-50 py-16">
-  <div class="container">
-    <h2 class="text-center mb-4">Meet our mentors</h2>
-    <p class="text-center text-gray-600 mb-12">Learn from industry experts and professionals</p>
+<section id="mentors-section" class="bg-slate-50 py-20">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-3xl mx-auto mb-14">
+      <span class="text-xs font-bold uppercase tracking-widest text-primary bg-primary/10 px-3 py-1 rounded-full">Encadrement STB</span>
+      <h2 class="text-3xl font-extrabold text-gray-900 mt-3">Des experts métiers à vos côtés</h2>
+      <p class="text-gray-600 mt-2">Chaque stagiaire est accompagné par un encadrant STB dédié, expert dans son domaine, tout au long du stage.</p>
+    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <div *ngFor="let mentor of mentors" class="bg-white rounded-lg shadow-mentor-shadow p-6 text-center hover:shadow-xl transition duration-300">
-        <img [src]="mentor.imageSrc" [alt]="mentor.color" class="w-32 h-32 rounded-full mx-auto mb-4" />
-        <h3 class="text-xl font-bold mb-2">{{ mentor.color }}</h3>
-        <p class="text-gray-600">{{ mentor.name }}</p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div *ngFor="let mentor of mentors" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center hover:shadow-xl hover:-translate-y-1 transition duration-300">
+        <div class="relative w-28 h-28 mx-auto mb-5">
+          <img [src]="mentor.imageSrc" [alt]="mentor.imageAlt" class="w-28 h-28 rounded-full object-cover ring-4 ring-primary/10" />
+          <div class="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shadow-md">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 mb-1">{{ mentor.name }}</h3>
+        <p class="text-sm font-semibold text-primary mb-3">{{ mentor.color }}</p>
+        <p class="text-xs text-gray-500">Encadrant officiel STB — suivi hebdomadaire, évaluation et validation de l'attestation.</p>
       </div>
     </div>
   </div>

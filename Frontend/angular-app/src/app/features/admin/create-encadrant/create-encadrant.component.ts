@@ -18,7 +18,8 @@ export class CreateEncadrantComponent {
   isLoading = false;
   errorMessage = '';
   successMessage = '';
-  tempPassword = '';
+  /** Email the credentials were sent to — echoed back in the confirmation card. */
+  sentToEmail = '';
 
   constructor(
     private fb: FormBuilder,
@@ -27,7 +28,9 @@ export class CreateEncadrantComponent {
   ) {
     this.form = this.fb.group({
       firstName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
+      lastName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
       email: ['', [Validators.required, Validators.email]],
+      phone: ['', [Validators.pattern(/^[0-9+\s.-]{6,20}$/)]],
       departement: ['', Validators.required]
     });
   }
@@ -37,13 +40,13 @@ export class CreateEncadrantComponent {
       this.isLoading = true;
       this.errorMessage = '';
       this.successMessage = '';
-      this.tempPassword = '';
+      this.sentToEmail = '';
 
       this.http.post<any>(`${environment.apiUrl}/auth/encadrants`, this.form.value)
         .subscribe({
           next: (response) => {
             this.isLoading = false;
-            this.tempPassword = this.extractTempPassword(response.message);
+            this.sentToEmail = response.email ?? this.form.value.email;
             this.successMessage = `Encadrant "${response.firstName}" créé avec succès !`;
             this.form.reset();
           },
@@ -54,15 +57,5 @@ export class CreateEncadrantComponent {
           }
         });
     }
-  }
-
-  private extractTempPassword(message: string): string {
-    const prefix = 'Mot de passe temporaire: ';
-    const idx = message.indexOf(prefix);
-    return idx >= 0 ? message.substring(idx + prefix.length) : '';
-  }
-
-  copyPassword() {
-    navigator.clipboard.writeText(this.tempPassword);
   }
 }

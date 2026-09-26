@@ -12,6 +12,7 @@ import { FooterLink } from '../../core/models/menu.model';
 })
 export class FooterComponent implements OnInit {
   footerLinks: FooterLink[] = [];
+  readonly year = new Date().getFullYear();
 
   constructor(private dataService: DataService) {}
 

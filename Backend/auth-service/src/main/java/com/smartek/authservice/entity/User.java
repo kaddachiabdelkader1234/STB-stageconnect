@@ -35,6 +35,14 @@ public class User {
     @Size(max = 50)
     @Column(nullable = false, length = 50)
     private String firstName;
+
+    /**
+     * Nom de famille. Nullable in the database: accounts created before this field existed
+     * (and the seeded admin) have no last name until the profile is completed.
+     */
+    @Size(max = 50)
+    @Column(name = "last_name", length = 50)
+    private String lastName;
     
     @NotBlank(message = "L'email est obligatoire")
     @Email(message = "Format d'email invalide")
@@ -63,4 +71,24 @@ public class User {
      */
     @Column(length = 512)
     private String refreshToken;
+
+    /**
+     * Account creation timestamp. Nullable column: pre-existing rows are backfilled to the
+     * migration time by DDL default rather than being given a fake historical date.
+     */
+    @Column(name = "created_at", updatable = false)
+    private java.time.Instant createdAt;
+
+    @Column(name = "reset_password_token", length = 255)
+    private String resetPasswordToken;
+
+    @Column(name = "reset_password_expires_at")
+    private java.time.Instant resetPasswordExpiresAt;
+
+    @PrePersist
+    void onCreate() {
+        if (createdAt == null) {
+            createdAt = java.time.Instant.now();
+        }
+    }
 }

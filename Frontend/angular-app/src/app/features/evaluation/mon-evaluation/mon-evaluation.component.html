@@ -31,7 +31,7 @@
       <p class="mt-1 text-sm text-gray-500">
         Déposez d'abord votre demande de stage depuis « Ma candidature ».
       </p>
-      <a routerLink="/dashboard/ma-candidature"
+      <a routerLink="/espace/ma-candidature"
          class="mt-5 inline-block rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90">
         Aller à ma candidature
       </a>
@@ -58,6 +58,21 @@
     </section>
 
     <ng-container *ngIf="stageActif">
+      <!-- Pending validation: the encadrant graded, the administration has not approved yet -->
+      <section *ngIf="enAttenteValidation"
+               class="rounded-2xl border border-amber-200 bg-amber-50 p-6 flex items-start gap-4">
+        <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+          <span class="material-icons text-amber-600">hourglass_top</span>
+        </div>
+        <div>
+          <p class="font-semibold text-amber-800">Évaluation en attente de validation</p>
+          <p class="text-sm text-amber-700 mt-1">
+            Votre encadrant a enregistré une évaluation. Elle sera visible ici dès que
+            l'administration l'aura validée — vous recevrez une notification.
+          </p>
+        </div>
+      </section>
+
       <!-- Average score card -->
       <section *ngIf="noteMoyenne !== null"
                class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
@@ -72,23 +87,16 @@
         </div>
       </section>
 
-      <!-- Evaluations list -->
-      <section class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+      <!-- Evaluations list — validated ones only -->
+      <section *ngIf="evaluationsValidees.length > 0"
+               class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
         <div class="border-b border-gray-100 px-6 py-4">
           <h2 class="font-bold text-gray-800">Mes évaluations</h2>
-          <span class="text-xs text-gray-500">{{ evaluations.length }} évaluation(s)</span>
+          <span class="text-xs text-gray-500">{{ evaluationsValidees.length }} évaluation(s) validée(s)</span>
         </div>
 
-        <div *ngIf="evaluations.length === 0" class="p-12 text-center">
-          <span class="material-icons text-5xl text-gray-300">hourglass_top</span>
-          <p class="mt-3 font-semibold text-gray-700">Aucune évaluation pour le moment.</p>
-          <p class="mt-1 text-sm text-gray-500">
-            Votre encadrant saisira l'évaluation une fois votre stage suffisamment avancé.
-          </p>
-        </div>
-
-        <ul *ngIf="evaluations.length > 0" class="divide-y divide-gray-100">
-          <li *ngFor="let evalObj of evaluations" class="px-6 py-5">
+        <ul class="divide-y divide-gray-100">
+          <li *ngFor="let evalObj of evaluationsValidees" class="px-6 py-5">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div class="flex items-center gap-3">
                 <span class="material-icons text-gray-400">star</span>
@@ -103,9 +111,8 @@
               </div>
 
               <div class="flex items-center gap-2">
-                <!-- Note badge — only visible once validated -->
-                <span *ngIf="evalObj.statut === 'Validee'"
-                      class="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-3 py-1 text-sm font-bold text-indigo-800">
+                <!-- Note badge — the list only contains validated evaluations -->
+                <span class="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-3 py-1 text-sm font-bold text-indigo-800">
                   {{ formatNote(evalObj.note) }}
                 </span>
 
@@ -117,8 +124,8 @@
               </div>
             </div>
 
-            <!-- Comment: visible to the stagiaire only once validated, to avoid premature disclosure -->
-            <div *ngIf="evalObj.statut === 'Validee' && evalObj.commentaire"
+            <!-- Comment: validated evaluations only, so no premature disclosure -->
+            <div *ngIf="evalObj.commentaire"
                  class="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4">
               <div class="flex items-center gap-2">
                 <span class="material-icons text-sm text-indigo-600">rate_review</span>
@@ -130,11 +137,6 @@
                 {{ evalObj.commentaire }}
               </p>
             </div>
-
-            <!-- Placeholder when not yet validated -->
-            <p *ngIf="evalObj.statut !== 'Validee'" class="mt-3 text-sm text-gray-500 italic">
-              L'appréciation sera visible après validation par l'administration.
-            </p>
           </li>
         </ul>
       </section>

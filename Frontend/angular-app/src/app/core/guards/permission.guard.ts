@@ -26,7 +26,8 @@ export const permissionGuard: CanActivateFn = (route: ActivatedRouteSnapshot) =>
 
   if (!hasAccess) {
     console.warn('Access denied: User does not have required roles', requiredRoles);
-    router.navigate(['/dashboard']);
+    // Back to the caller's own home shell — admin keeps its console, members their workspace.
+    router.navigate([authService.hasRole('ADMIN') ? '/admin' : '/espace']);
     return false;
   }
 

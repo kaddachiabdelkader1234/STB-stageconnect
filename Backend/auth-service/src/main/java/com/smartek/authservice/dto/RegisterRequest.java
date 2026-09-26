@@ -21,6 +21,9 @@ public class RegisterRequest {
     @NotBlank(message = "Le prénom est obligatoire")
     @Size(max = 50)
     private String firstName;
+
+    @Size(max = 50)
+    private String lastName;
     
     @NotBlank(message = "L'email est obligatoire")
     @Email(message = "Format d'email invalide")

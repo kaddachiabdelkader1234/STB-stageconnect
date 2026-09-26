@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Smartek.Common.Errors;
+using Smartek.Common.Pagination;
 using Smartek.Common.Security;
 using Smartek.Common.Storage;
 using Stagiaire.Service.Data;
@@ -54,6 +55,50 @@ public class CandidaturesController : ControllerBase
         _fileStorage = fileStorage;
         _auditService = auditService;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Lists candidatures with server-side paging, filtering and search.
+    /// </summary>
+    /// <remarks>
+    /// Scoped exactly like <c>GET /api/v1/stagiaires</c>: an ADMIN sees every candidature, a TRAINER
+    /// only those assigned to them, and a LEARNER only their own. A candidature and a stagiaire are
+    /// the same record at different stages, so the filter and projection logic is shared with
+    /// <see cref="StagiairesController.GetAll"/> rather than duplicated.
+    /// </remarks>
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<StagiaireReadDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResult<StagiaireReadDto>>> GetAll(
+        [FromQuery] StagiaireQueryParameters query,
+        CancellationToken cancellationToken)
+    {
+        var source = _dbContext.Stagiaires.AsNoTracking().ApplyReadScope(User);
+        source = StagiairesController.ApplyFilters(source, query);
+
+        var page = await source
+            // Deterministic ordering: OFFSET/LIMIT without a tiebreaker can repeat or skip rows.
+            .OrderByDescending(x => x.DateSoumission)
+            .ThenBy(x => x.Id)
+            .Select(StagiairesController.ToReadDtoExpression())
+            .ToPagedResultAsync(query, cancellationToken);
+
+        return Ok(page);
+    }
+
+    /// <summary>
+    /// One candidature by id — visible to the owner, the assigned encadrant, or an admin.
+    /// </summary>
+    /// <remarks>
+    /// Out-of-scope ids answer 404, not 403, so the endpoint confirms nothing about which ids exist.
+    /// </remarks>
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(StagiaireReadDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<StagiaireReadDto>> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var entity = await FindVisibleAsync(id, cancellationToken);
+        return Ok(MapToReadDto(entity));
     }
 
     /// <summary>
@@ -130,8 +175,17 @@ public class CandidaturesController : ControllerBase
             $"Candidature de {dto.Prenom} {dto.Nom} ({email})",
             cancellationToken);
 
-        // No event here: a submission is not an acceptance. CandidatureAccepted is published by
-        // Accepter below.
+        await _publishEndpoint.Publish(new CandidatureSubmitted(
+            entity.Id,
+            callerId,
+            entity.Nom,
+            entity.Prenom,
+            email,
+            entity.Departement,
+            entity.TypeStage.ToString(),
+            entity.DateSoumission
+        ), cancellationToken);
+
         return CreatedAtAction(
             nameof(StagiairesController.GetById),
             "Stagiaires",
@@ -150,7 +204,9 @@ public class CandidaturesController : ControllerBase
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<StagiaireReadDto>> TeleverserCv(
         Guid id,
-        [FromForm(Name = "fichier")] IFormFile fichier,
+        // No [FromForm]: it is redundant here ([Consumes] already routes the form) and it makes
+        // Swashbuckle throw while generating swagger.json. Binding is by parameter name "fichier".
+        IFormFile fichier,
         CancellationToken cancellationToken)
     {
         var entity = await FindOwnedAsync(id, cancellationToken);
@@ -201,7 +257,8 @@ public class CandidaturesController : ControllerBase
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<StagiaireReadDto>> TeleverserDocument(
         Guid id,
-        [FromForm(Name = "fichier")] IFormFile fichier,
+        // No [FromForm] — same reason as TeleverserCv above.
+        IFormFile fichier,
         CancellationToken cancellationToken)
     {
         var entity = await FindOwnedAsync(id, cancellationToken);

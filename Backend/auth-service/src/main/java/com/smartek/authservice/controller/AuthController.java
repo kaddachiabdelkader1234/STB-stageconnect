@@ -2,10 +2,14 @@ package com.smartek.authservice.controller;
 
 import com.smartek.authservice.dto.AuthResponse;
 import com.smartek.authservice.dto.CreateEncadrantRequest;
+import com.smartek.authservice.dto.ChangePasswordRequest;
+import com.smartek.authservice.dto.ForgotPasswordRequest;
+import com.smartek.authservice.dto.ResetPasswordRequest;
 import com.smartek.authservice.dto.LoginRequest;
 import com.smartek.authservice.dto.RegisterRequest;
 import com.smartek.authservice.dto.UserSummaryResponse;
 import com.smartek.authservice.enums.RoleType;
+import com.smartek.authservice.exception.DuplicateEmailException;
 import com.smartek.authservice.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +44,13 @@ public class AuthController {
         try {
             AuthResponse response = authService.register(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (DuplicateEmailException e) {
+            // Safe, user-facing reason — 409 CONFLICT tells the form the email is taken.
+            log.warn("Inscription refusée, email déjà utilisé: {}", request.getEmail());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(AuthResponse.builder()
+                            .message(e.getMessage())
+                            .build());
         } catch (RuntimeException e) {
             log.error("Erreur lors de l'inscription: {}", e.getMessage());
             // SECURITY: Never expose internal error details to the client.
@@ -77,6 +88,14 @@ public class AuthController {
         try {
             AuthResponse response = authService.createEncadrant(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (DuplicateEmailException e) {
+            // Safe, user-facing reason — 409 CONFLICT tells the admin the email is taken so
+            // they pick another one instead of re-checking the form for a mistake.
+            log.warn("Création d'encadrant refusée, email déjà utilisé: {}", request.getEmail());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(AuthResponse.builder()
+                            .message(e.getMessage())
+                            .build());
         } catch (RuntimeException e) {
             log.error("Erreur lors de la création de l'encadrant: {}", e.getMessage());
             // SECURITY: Never expose internal error details to the client.
@@ -101,6 +120,50 @@ public class AuthController {
             log.error("Erreur lors du refresh: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(AuthResponse.builder().message("Refresh token invalide ou expiré").build());
+        }
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<AuthResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        log.info("Demande de réinitialisation de mot de passe pour: {}", request.getEmail());
+        try {
+            AuthResponse response = authService.forgotPassword(request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Erreur lors de la réinitialisation de mot de passe: {}", e.getMessage());
+            return ResponseEntity.ok(AuthResponse.builder()
+                    .message("Si un compte existe pour cet email, un lien sécurisé de réinitialisation vous a été envoyé par email.")
+                    .build());
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<AuthResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        log.info("Finalisation de réinitialisation de mot de passe via jeton");
+        try {
+            AuthResponse response = authService.resetPassword(request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Erreur lors de la finalisation du reset de mot de passe: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(AuthResponse.builder().message(e.getMessage()).build());
+        }
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<AuthResponse> changePassword(
+            @RequestHeader(value = "X-User-Id", required = false) Long headerUserId,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        Long userId = request.getUserId() != null ? request.getUserId() : headerUserId;
+        log.info("Changement de mot de passe pour utilisateur: {}", userId);
+        try {
+            AuthResponse response = authService.changePassword(userId, null, request);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(AuthResponse.builder().message(e.getMessage()).build());
+        } catch (RuntimeException e) {
+            log.error("Erreur lors du changement de mot de passe: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(AuthResponse.builder().message("Changement de mot de passe impossible.").build());
         }
     }
 
@@ -134,6 +197,57 @@ public class AuthController {
     public ResponseEntity<List<UserSummaryResponse>> getUsersByRole(@RequestParam RoleType role) {
         log.info("Liste des utilisateurs pour le rôle: {}", role);
         return ResponseEntity.ok(authService.getUsersByRole(role));
+    }
+
+    /**
+     * Every account on the platform — backs the admin's accounts-management screen. Reached
+     * only by an ADMIN (same gateway rule as /users). Same summary shape: no tokens, no
+     * password hashes, no base64 image.
+     */
+    @GetMapping("/users/all")
+    public ResponseEntity<List<UserSummaryResponse>> getAllUsers() {
+        log.info("Liste de tous les comptes (admin)");
+        return ResponseEntity.ok(authService.getAllUsers());
+    }
+
+    /**
+     * Re-issues credentials for an existing account (ADMIN only): generates a new password and
+     * emails it. Used when an encadrant lost the welcome email — the original password is hashed
+     * and cannot be resent as-is. The primary admin account is protected in the service layer.
+     */
+    @PostMapping("/user/{userId}/resend-credentials")
+    public ResponseEntity<AuthResponse> resendCredentials(@PathVariable Long userId) {
+        log.info("Renvoi des identifiants du compte {} demandé par un admin", userId);
+        try {
+            AuthResponse response = authService.resetAndResendCredentials(userId);
+            return ResponseEntity.ok(response);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(AuthResponse.builder().message(e.getMessage()).build());
+        } catch (RuntimeException e) {
+            log.error("Erreur lors du renvoi des identifiants du compte {}: {}", userId, e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(AuthResponse.builder().message("Renvoi impossible. Veuillez réessayer.").build());
+        }
+    }
+
+    /**
+     * Deletes an account (ADMIN only). The primary admin account is protected in the service
+     * layer — a delete attempt returns 409 with an explanation instead of a silent no-op.
+     */
+    @DeleteMapping("/user/{userId}")
+    public ResponseEntity<AuthResponse> deleteUser(@PathVariable Long userId) {
+        log.info("Suppression du compte {} demandée par un admin", userId);
+        try {
+            authService.deleteUser(userId);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(AuthResponse.builder().message(e.getMessage()).build());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(AuthResponse.builder().message("Utilisateur non trouvé").build());
+        }
     }
     
     @GetMapping("/user/{userId}")

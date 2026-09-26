@@ -61,6 +61,16 @@ spring:
           uri: lb://NOTIFICATION-SERVICE
           predicates:
             - Path=/api/v1/notifications/**
+        # SignalR hub for real-time notifications — WebSocket upgrade handled
+        # by WebSocketJwtFilter (reads access_token query param, sets Authorization header).
+        - id: notification-hub
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/hub/**
+        - id: subject-matching-service
+          uri: lb://SUBJECT-MATCHING-SERVICE
+          predicates:
+            - Path=/api/v1/subjects/**,/api/v1/matching/**,/api/v1/subject-assignments/**,/api/v1/subject-change-requests/**
 
 # CORS is handled by SecurityConfig#corsConfigurationSource (Spring Security runs first in the
 # reactive filter chain). Declaring globalcors here as well would duplicate the headers.

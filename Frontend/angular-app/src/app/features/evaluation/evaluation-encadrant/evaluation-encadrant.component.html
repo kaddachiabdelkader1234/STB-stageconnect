@@ -219,19 +219,28 @@
               Modifier
             </button>
 
-            <!-- Validate: admin only, only when Soumise -->
-            <button *ngIf="evalObj.statut === 'Soumise'" type="button" (click)="valider(evalObj)"
-                    [disabled]="enregistrement"
-                    class="inline-flex items-center gap-1 rounded-xl border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-100 disabled:opacity-50">
-              <span class="material-icons text-sm">check_circle</span>
-              Valider
-            </button>
+            <!-- Validate: ADMIN only (server enforces too). An encadrant sees a status hint. -->
+            <ng-container *ngIf="isAdmin">
+              <button *ngIf="evalObj.statut === 'Soumise'" type="button" (click)="valider(evalObj)"
+                      [disabled]="enregistrement"
+                      class="inline-flex items-center gap-1 rounded-xl border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-100 disabled:opacity-50">
+                <span class="material-icons text-sm">check_circle</span>
+                Valider
+              </button>
 
-            <!-- Delete: admin only -->
-            <button type="button" (click)="supprimer(evalObj)"
-                    class="inline-flex items-center gap-1 rounded-xl border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50">
-              <span class="material-icons text-sm">delete_outline</span>
-            </button>
+              <!-- Delete: admin only -->
+              <button type="button" (click)="supprimer(evalObj)"
+                      class="inline-flex items-center gap-1 rounded-xl border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50">
+                <span class="material-icons text-sm">delete_outline</span>
+              </button>
+            </ng-container>
+
+            <!-- Encadrant: explain what happens next instead of a dead button -->
+            <span *ngIf="!isAdmin && evalObj.statut === 'Soumise'"
+                  class="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs font-medium text-amber-700">
+              <span class="material-icons text-sm">hourglass_top</span>
+              En attente de validation par l'administration
+            </span>
           </div>
         </li>
       </ul>

@@ -19,6 +19,11 @@ export class SignInComponent {
   rememberMe = false;
   isLoading = false;
   errorMessage = '';
+  showForgotPassword = false;
+  forgotEmail = '';
+  isForgotLoading = false;
+  forgotSuccess = '';
+  forgotError = '';
 
   constructor(
     private fb: FormBuilder,
@@ -33,6 +38,39 @@ export class SignInComponent {
 
   togglePasswordVisibility() {
     this.showPassword = !this.showPassword;
+  }
+
+  openForgotPassword(event: Event) {
+    event.preventDefault();
+    this.showForgotPassword = true;
+    this.forgotEmail = this.signInForm.value.email || '';
+    this.forgotSuccess = '';
+    this.forgotError = '';
+  }
+
+  closeForgotPassword() {
+    this.showForgotPassword = false;
+    this.forgotSuccess = '';
+    this.forgotError = '';
+  }
+
+  submitForgotPassword() {
+    if (!this.forgotEmail || this.isForgotLoading) return;
+
+    this.isForgotLoading = true;
+    this.forgotSuccess = '';
+    this.forgotError = '';
+
+    this.authService.forgotPassword(this.forgotEmail).subscribe({
+      next: (res) => {
+        this.isForgotLoading = false;
+        this.forgotSuccess = res.message || 'Si un compte existe, un nouveau mot de passe a été envoyé par email.';
+      },
+      error: (err) => {
+        this.isForgotLoading = false;
+        this.forgotError = err.message || 'Une erreur est survenue lors de la réinitialisation.';
+      }
+    });
   }
 
   onSubmit() {
@@ -50,7 +88,7 @@ export class SignInComponent {
           // Only reached on a real 2xx now — AuthService rethrows failures instead of
           // converting them into a normal emission, which used to land here with no token.
           this.isLoading = false;
-          this.router.navigate(['/dashboard']);
+          this.router.navigate(this.authService.hasRole('ADMIN') ? ['/admin'] : ['/espace']);
         },
         error: (error: ApiError) => {
           this.isLoading = false;

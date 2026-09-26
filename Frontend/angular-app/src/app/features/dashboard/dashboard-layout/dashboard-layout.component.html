@@ -1,45 +1,29 @@
-<div class="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/30 to-cyan-50/30">
-  <app-sidebar></app-sidebar>
-  
-  <main class="ease-soft-in-out xl:ml-68.5 relative h-full max-h-screen transition-all duration-200">
-    <!-- Cool & Comfortable Professional Navbar -->
-    <nav class="relative flex items-center justify-between px-6 py-4 mx-6 mt-4 bg-gradient-to-r from-teal-600 to-sky-600 shadow-lg rounded-2xl">
-      <div class="flex items-center space-x-4">
-        <h6 class="mb-0 text-xl font-bold text-white">
-          {{ getPageTitle() }}
-        </h6>
-      </div>
+<div class="min-h-screen bg-[#F4F6FB] dark:bg-[#070D1A]">
+  <div class="dashboard-content">
+    <app-sidebar></app-sidebar>
 
-      <div class="flex items-center space-x-4">
-        <!-- User Info -->
-        <div class="flex items-center space-x-3 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl">
-          <div class="w-9 h-9 bg-white/30 rounded-full flex items-center justify-center overflow-hidden">
-            <img *ngIf="getUserImage()" [src]="getUserImage()" alt="User" class="w-full h-full object-cover">
-            <span *ngIf="!getUserImage()" class="text-white text-sm font-semibold">{{ getUserInitial() }}</span>
-          </div>
-          <div class="hidden md:block">
-            <p class="text-sm font-semibold text-white">{{ currentUser?.firstName }}</p>
-            <p class="text-xs text-white/80">{{ formatRole(currentUser?.role) }}</p>
-          </div>
-        </div>
-
-        <!-- Logout Button -->
-        <button (click)="logout()" 
-                class="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 rounded-xl transition-all duration-200">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-          </svg>
-          <span class="hidden sm:inline">Logout</span>
+    <!-- xl:ml-68.5 clears the fixed 264px console sidebar on wide screens; without it the main
+         content starts at x=0 and hides underneath the sidebar -->
+    <main class="flex-1 p-6 lg:p-8 overflow-auto min-h-screen xl:ml-68.5">
+      <!-- Admin Top Bar cluster: Notification bell on the side -->
+      <div class="flex items-center justify-end mb-4">
+        <button (click)="toggleNotifications()"
+                class="relative w-10 h-10 rounded-xl bg-white dark:bg-[#0B1222] shadow-sm border border-gray-200/80 dark:border-white/10 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition group"
+                aria-label="Notifications"
+                title="Notifications">
+          <span class="material-icons text-[21px] text-gray-500 dark:text-gray-400 group-hover:text-[#C8A951] transition">notifications_none</span>
+          <span *ngIf="(unread() ?? 0) > 0"
+                class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold ring-2 ring-white dark:ring-[#070D1A] animate-pulse">
+            {{ (unread() ?? 0) > 9 ? '9+' : unread() }}
+          </span>
         </button>
       </div>
-    </nav>
 
-    <!-- Content -->
-    <div class="w-full px-6 py-6 mx-auto animate-fade-in">
       <router-outlet></router-outlet>
-    </div>
-  </main>
+    </main>
+  </div>
 
-  <!-- Notification Component -->
+  <!-- Shared overlays: slide-over notification panel + toast popups -->
+  <app-notification-center></app-notification-center>
   <app-notification></app-notification>
 </div>

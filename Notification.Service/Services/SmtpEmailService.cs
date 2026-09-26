@@ -31,7 +31,7 @@ public class SmtpEmailService : IEmailService
         _logger = logger;
     }
 
-    public async Task SendEmailAsync(string to, string subject, string body, CancellationToken cancellationToken = default)
+    public async Task SendEmailAsync(string to, string subject, string body, CancellationToken cancellationToken = default, bool isHtml = false)
     {
         if (_options.NoOp)
         {
@@ -48,7 +48,7 @@ public class SmtpEmailService : IEmailService
             message.To.Add(to);
             message.Subject = subject;
             message.Body = body;
-            message.IsBodyHtml = false;
+            message.IsBodyHtml = isHtml;
 
             using var client = new SmtpClient(_options.Host, _options.Port)
             {
@@ -58,6 +58,7 @@ public class SmtpEmailService : IEmailService
 
             if (!string.IsNullOrEmpty(_options.Username))
             {
+                client.UseDefaultCredentials = false;
                 client.Credentials = new NetworkCredential(_options.Username, _options.Password);
             }
 

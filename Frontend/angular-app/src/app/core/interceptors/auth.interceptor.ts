@@ -63,7 +63,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
       // Authenticated but not allowed: keep the session, send them somewhere they can be.
       if (error.status === 403) {
-        router.navigate(['/dashboard']);
+        router.navigate(authService.hasRole('ADMIN') ? ['/admin'] : ['/espace']);
       }
 
       return throwError(() => error);

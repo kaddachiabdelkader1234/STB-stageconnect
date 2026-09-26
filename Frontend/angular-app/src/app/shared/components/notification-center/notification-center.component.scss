@@ -1,0 +1,11 @@
+/* Slide-over panel styles — animations live here so templates stay utility-only. */
+
+/* Progress backdrop fade — paired with the panel's transform transition. */
+.fixed.inset-0 {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
