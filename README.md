@@ -9,6 +9,11 @@
 
 ---
 
+[![Read in English](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue?style=for-the-badge)](./README.md)
+[![Lire en Français](https://img.shields.io/badge/Langue-Français%20%F0%9F%87%AB%F0%9F%87%B7-green?style=for-the-badge)](./README.fr.md)
+
+---
+
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-6DB33F?style=for-the-badge&logo=springboot)](https://spring.io/projects/spring-boot)
 [![Angular](https://img.shields.io/badge/Angular-18%2B-DD0031?style=for-the-badge&logo=angular)](https://angular.dev/)
@@ -352,7 +357,8 @@ STB-stageconnect/
 │
 ├── docker-compose.yml                # Full local multi-container deployment
 ├── .env.example                      # Environment variable template
-└── README.md                         # This file
+├── README.md                         # English documentation
+└── README.fr.md                      # French documentation
 ```
 
 ---
