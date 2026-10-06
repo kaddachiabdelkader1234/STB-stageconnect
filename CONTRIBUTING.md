@@ -106,6 +106,5 @@ npm install
 npm run start
 ```
 
----
-
-*STB StageConnect — PFE 2025/2026*
+*STB StageConnect — Engineering Internship Project (STB)*
+*Author: Abdelkader Kaddachi*

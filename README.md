@@ -2,9 +2,10 @@
 
 <div align="center">
 
-**A production-grade, microservices-based internship lifecycle platform built for the Société Tunisienne de Banque (STB)**
+**A production-grade, microservices-based internship lifecycle platform built during an Engineering Summer Internship at the Société Tunisienne de Banque (STB)**
 
-*Projet de Fin d'Études (PFE) — Année Universitaire 2025/2026*
+*Stage d'Ingénieur / Summer Internship Project — Société Tunisienne de Banque (STB)*  
+*Portfolio Project for PFE & Software Engineering Applications*
 
 ---
 
@@ -374,7 +375,7 @@ STB-stageconnect/
 
 ## Contributing
 
-This is a PFE academic project. Contributions, suggestions, and feedback are welcome!
+Contributions, feedback, and issue reports are welcome!
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature-name`
@@ -388,10 +389,9 @@ Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines.
 
 <div align="center">
 
-*Developed for the Société Tunisienne de Banque (STB)*
+*Developed during an Engineering Summer Internship at the Société Tunisienne de Banque (STB)*  
+*Author: Abdelkader Kaddachi — Software Engineering Student*
 
-*Projet de Fin d'Études (PFE) — 2025/2026*
-
-**Star this repo if you find it useful!**
+**⭐ Star this repo if you find it useful!**
 
 </div>

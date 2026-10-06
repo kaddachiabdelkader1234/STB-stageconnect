@@ -1,4 +1,4 @@
-﻿# Changelog
+# Changelog
 
 All notable changes to this project will be documented in this file.
 
@@ -40,6 +40,5 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 - Default branch renamed from `gestion-des-stagiere` to `main`
 - README rewritten: bilingual (English primary, French secondary), professional badge header, Mermaid architecture diagram
 
----
-
-*STB StageConnect — PFE 2025/2026*
+*STB StageConnect — Société Tunisienne de Banque (STB)*
+*Author: Abdelkader Kaddachi*
