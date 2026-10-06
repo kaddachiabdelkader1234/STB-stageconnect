@@ -1,10 +1,10 @@
-name: CI - Build & Test
+name: CI — Build & Test
 
 on:
   push:
-    branches: ["*"]
+    branches: [main, develop, "feature/**", "fix/**"]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   # ========== JAVA SERVICES ==========
